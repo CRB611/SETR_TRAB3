@@ -1,5 +1,14 @@
 {
     "nrf-connect.applications": [
         "${workspaceFolder}"
-    ]
+    ],
+    "files.associations": {
+        "kernel.h": "c",
+        "term_control.h": "c",
+        "stdio.h": "c",
+        "gpio.h": "c",
+        "devicetree.h": "c",
+        "uart.h": "c",
+        "printk.h": "c"
+    }
 }
