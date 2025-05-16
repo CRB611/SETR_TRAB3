@@ -1,0 +1,14 @@
+&i2c0 {
+    status = "okay";
+    pinctrl-0 = <&i2c0_default>;
+    pinctrl-1 = <&i2c0_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    /* Definição única do sensor; NÃO repetir fora deste bloco! */
+    tc74sensor: tc74sensor@4d {
+        compatible = "microchip,tc74";
+        reg = <0x4d>;
+        status = "okay";
+        label = "TC74SENSOR";
+    };
+};
