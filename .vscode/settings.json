@@ -9,6 +9,7 @@
         "gpio.h": "c",
         "devicetree.h": "c",
         "uart.h": "c",
-        "printk.h": "c"
+        "printk.h": "c",
+        "pwm.h": "c"
     }
 }

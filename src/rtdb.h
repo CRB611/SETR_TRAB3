@@ -39,4 +39,29 @@ void rtdb_set_error_flag(bool err);
  */
 bool rtdb_get_error_flag(void);
 
+// PWM
+
+/**
+ * @brief Define o setpoint desejado (°C).
+ */
+void    rtdb_set_setpoint(int16_t sp);
+
+/**
+ * @brief Obtém o setpoint atual (°C).
+ */
+int16_t rtdb_get_setpoint(void);
+
+/**
+ * @brief Liga/desliga o sistema (heater).
+ */
+void    rtdb_set_system_on(bool on);
+
+/**
+ * @brief Indica se o sistema está ligado.
+ */
+bool    rtdb_get_system_on(void);
+
 #endif /* RTDB_H */
+
+
+

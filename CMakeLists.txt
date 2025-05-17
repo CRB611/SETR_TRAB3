@@ -7,4 +7,6 @@ target_sources(app PRIVATE
     src/main.c
     src/tc74.c       # módulo I²C/TC74
     src/rtdb.c       # módulo RTDB
+    src/pid.c
+    src/heater.c
 )

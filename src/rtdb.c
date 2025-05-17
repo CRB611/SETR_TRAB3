@@ -1,18 +1,22 @@
 #include "rtdb.h"
 #include <zephyr/kernel.h>
 
-/* Mutex para proteger todas as variáveis da RTDB */
+/* Mutex que protege todas as variáveis da RTDB */
 static struct k_mutex rtdb_mutex;
 
 /* Variáveis partilhadas da RTDB */
-static uint8_t cur_temp   = 0;
-static bool    error_flag = false;
+static uint8_t  cur_temp   = 0;
+static bool     error_flag = false;
+static int16_t  setpoint   = 40;   /* Default = 40°C */
+static bool     system_on  = true; /* Sistema ligado por defeito */
 
 void rtdb_init(void)
 {
     k_mutex_init(&rtdb_mutex);
     cur_temp   = 0;
     error_flag = false;
+    setpoint   = 40;
+    system_on  = true;
 }
 
 void rtdb_set_cur_temp(uint8_t t)
@@ -45,4 +49,36 @@ bool rtdb_get_error_flag(void)
     e = error_flag;
     k_mutex_unlock(&rtdb_mutex);
     return e;
+}
+
+void rtdb_set_setpoint(int16_t sp)
+{
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    setpoint = sp;
+    k_mutex_unlock(&rtdb_mutex);
+}
+
+int16_t rtdb_get_setpoint(void)
+{
+    int16_t v;
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    v = setpoint;
+    k_mutex_unlock(&rtdb_mutex);
+    return v;
+}
+
+void rtdb_set_system_on(bool on)
+{
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    system_on = on;
+    k_mutex_unlock(&rtdb_mutex);
+}
+
+bool rtdb_get_system_on(void)
+{
+    bool v;
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    v = system_on;
+    k_mutex_unlock(&rtdb_mutex);
+    return v;
 }

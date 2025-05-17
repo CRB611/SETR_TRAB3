@@ -1,4 +1,4 @@
-/**
+/** 
  * \file main.c
  * \brief This file contains all the structures and functions needed for the code as well as the main program.
  *
@@ -22,45 +22,44 @@
 /* nosso módulo I²C/TC74 */
 #include "tc74.h"
 #include "rtdb.h"
+#include "heater.h"
+#include "pid.h"
 
-/* --- Definições para a thread de leitura do TC74 --- */
-#define TC74_SAMPLE_PERIOD_MS   1000    /* período de amostragem, em ms */
-#define TC74_THREAD_STACK_SIZE  512     /* tamanho da stack da thread */
-#define TC74_THREAD_PRIORITY    5       /* prioridade da thread */
-
-/*Declara a stack da thread */
-K_THREAD_STACK_DEFINE(tc74_stack, TC74_THREAD_STACK_SIZE);
-
-/*Objeto para guardar os metadados da thread */
-static struct k_thread tc74_thread_data;
-
-/*Protótipo da função que corre na thread */
-static void tc74_thread(void *arg1, void *arg2, void *arg3);
-
-
-
-
-
-/* VARIÁVEIS */
-#define SLEEP_TIME_MS 1000   ///< Sleep Time
+/* Definições gerais */
+#define SLEEP_TIME_MS    1000    ///< Sleep Time
 
 /* UART RELATED VARIABLES */
 #define UART_NODE       DT_NODELABEL(uart0)   ///< UART node ID
 #define TBUFF_SIZE      60                    ///< Size of the transmission buffer
 #define RBUFF_SIZE      60                    ///< Size of the reception buffer
 #define MSG_BUFF_SIZE   100                   ///< Size of the message buffer
-#define RECEIVE_TIMEOUT 1000                 ///< Receive timeout
+#define RECEIVE_TIMEOUT 1000                  ///< Receive timeout
 
 static uint8_t tx_buff[TBUFF_SIZE];
 static uint8_t rx_buff[RBUFF_SIZE];
-volatile int uart_rxbuf_nchar = 0;           ///< Number of chars currently in the rx buffer 
+volatile int uart_rxbuf_nchar = 0;           ///< Number of chars currently in the rx buffer
 static const struct device *uart = DEVICE_DT_GET(UART_NODE);
+
+/* --- Definições para a thread de leitura do TC74 --- */
+#define TC74_SAMPLE_PERIOD_MS   1000    /* período de amostragem, em ms */
+#define TC74_THREAD_STACK_SIZE  512     /* tamanho da stack da thread */
+#define TC74_THREAD_PRIORITY    5       /* prioridade da thread */
+K_THREAD_STACK_DEFINE(tc74_stack, TC74_THREAD_STACK_SIZE);
+static struct k_thread tc74_thread_data;
+static void tc74_thread(void *arg1, void *arg2, void *arg3);
+
+/* --- Definições thread de controlo PID→PWM --- */
+#define CONTROL_PERIOD_MS 500
+#define CONTROL_PRIO      4
+#define CONTROL_STACK_SZ  512
+K_THREAD_STACK_DEFINE(control_stack, CONTROL_STACK_SZ);
+static struct k_thread control_data;
+static void control_thread(void *arg1, void *arg2, void *arg3);
 
 /* Setting up the buttons */
 #define SW0_NODE DT_ALIAS(sw0)  ///< NODE ID for Button 1
 #define SW1_NODE DT_ALIAS(sw1)  ///< NODE ID for Button 2
 #define SW3_NODE DT_ALIAS(sw3)  ///< NODE ID for Button 4
-
 static const struct gpio_dt_spec button0 = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 static const struct gpio_dt_spec button1 = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 static const struct gpio_dt_spec button3 = GPIO_DT_SPEC_GET(SW3_NODE, gpios);
@@ -70,51 +69,40 @@ static const struct gpio_dt_spec button3 = GPIO_DT_SPEC_GET(SW3_NODE, gpios);
 #define LED1_NODE DT_ALIAS(led1)  ///< NODE ID for LED 2
 #define LED2_NODE DT_ALIAS(led2)  ///< NODE ID for LED 3
 #define LED3_NODE DT_ALIAS(led3)  ///< NODE ID for LED 4
-
 static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 static const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 static const struct gpio_dt_spec led2 = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
 static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(LED3_NODE, gpios);
 
-/* Callback variables for the buttons */
 static struct gpio_callback button_cb_data0;
 static struct gpio_callback button_cb_data1;
 static struct gpio_callback button_cb_data3;
 
-/* callback functions for the buttons */
-/**
- * @brief Executed when button 1 is pressed
- */
+/* Callback functions for the buttons */
 void button_pressed0(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     printk("ON/OFF\r\n");
     gpio_pin_toggle_dt(&led0);
 }
 
-/**
- * @brief Executed when button 2 is pressed
- */
 void button_pressed1(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     printk("Desired Temperature increased : xxºC\r\n");
 }
 
-/**
- * @brief Executed when button 4 is pressed
- */
 void button_pressed3(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     printk("Desired Temperature decreased : xxºC\r\n");
 }
 
 /* UART callback function */
 static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data) {
-    switch (evt->type) {  
+    switch (evt->type) {
     case UART_RX_RDY:
-        if (evt->data.rx.len == 1) {  
+        if (evt->data.rx.len == 1) {
             printk("pressing button = %c \r\n", evt->data.rx.buf[evt->data.rx.offset]);
         }
         break;
     case UART_RX_DISABLED:
-        uart_rx_enable(dev, rx_buff, sizeof rx_buff, RECEIVE_TIMEOUT);
-        break;  
+        uart_rx_enable(dev, rx_buff, sizeof(rx_buff), RECEIVE_TIMEOUT);
+        break;
     default:
         break;
     }
@@ -123,24 +111,33 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 int main(void)
 {
     int ret;
-	 /* Inicializa a RTDB */
+
+    /* Inicializa a RTDB */
     rtdb_init();
-    /* --- Inicializar sensor TC74 via I²C --- */
+
+    /* Inicializa o sensor TC74 via I²C */
     ret = tc74_init();
     if (ret) {
         printk("Erro ao inicializar TC74 (%d)\n", ret);
         return ret;
     }
 
-    /* --- Inicialização da UART --- */
+    /* Inicializa o PWM do heater */
+    ret = heater_init();
+    if (ret) {
+        printk("Erro ao inicializar heater PWM (%d)\n", ret);
+        return ret;
+    }
+
+    /* Inicialização da UART */
     if (!device_is_ready(uart)) {
         printk("UART device not ready\r\n");
         return 1;
     }
     uart_callback_set(uart, uart_cb, NULL);
-    uart_rx_enable(uart, rx_buff, sizeof rx_buff, RECEIVE_TIMEOUT);
+    uart_rx_enable(uart, rx_buff, sizeof(rx_buff), RECEIVE_TIMEOUT);
 
-    /* --- Inicialização dos LEDs --- */
+    /* Inicialização dos LEDs */
     if (!device_is_ready(led0.port) ||
         !device_is_ready(led1.port) ||
         !device_is_ready(led2.port) ||
@@ -153,7 +150,7 @@ int main(void)
     gpio_pin_configure_dt(&led2, GPIO_OUTPUT_INACTIVE);
     gpio_pin_configure_dt(&led3, GPIO_OUTPUT_INACTIVE);
 
-    /* --- Inicialização dos botões e configurações de interrupção --- */
+    /* Inicialização dos botões */
     if (!device_is_ready(button0.port) ||
         !device_is_ready(button1.port) ||
         !device_is_ready(button3.port)) {
@@ -163,33 +160,29 @@ int main(void)
     gpio_pin_configure_dt(&button0, GPIO_INPUT);
     gpio_pin_configure_dt(&button1, GPIO_INPUT);
     gpio_pin_configure_dt(&button3, GPIO_INPUT);
-
     gpio_init_callback(&button_cb_data0, button_pressed0, BIT(button0.pin));
     gpio_add_callback(button0.port, &button_cb_data0);
     gpio_pin_interrupt_configure_dt(&button0, GPIO_INT_EDGE_TO_ACTIVE);
-
     gpio_init_callback(&button_cb_data1, button_pressed1, BIT(button1.pin));
     gpio_add_callback(button1.port, &button_cb_data1);
     gpio_pin_interrupt_configure_dt(&button1, GPIO_INT_EDGE_TO_ACTIVE);
-
     gpio_init_callback(&button_cb_data3, button_pressed3, BIT(button3.pin));
     gpio_add_callback(button3.port, &button_cb_data3);
     gpio_pin_interrupt_configure_dt(&button3, GPIO_INT_EDGE_TO_ACTIVE);
 
-    /* --- Transmissão inicial por UART (opcional) --- */
-    // uint8_t welcome_mesg[] = "UART demo: Type a few chars ...\n\r";
-    // uart_tx(uart, welcome_mesg, strlen(welcome_mesg), SYS_FOREVER_US);
+    /* Cria thread de leitura do TC74 */
+    k_thread_create(&tc74_thread_data, tc74_stack,
+                    K_THREAD_STACK_SIZEOF(tc74_stack),
+                    tc74_thread, NULL, NULL, NULL,
+                    TC74_THREAD_PRIORITY, 0, K_NO_WAIT);
 
-k_thread_create(&tc74_thread_data,    /* objecto da thread */
-                    tc74_stack,           /* stack definida em 1a) */
-                    K_THREAD_STACK_SIZEOF(tc74_stack), 
-                    tc74_thread,          /* função a correr */
-                    NULL, NULL, NULL,     /* args (não usamos) */
-                    TC74_THREAD_PRIORITY, /* prioridade */
-                    0,                    /* flags */
-                    K_NO_WAIT);           /* arranca imediatamente */
+    /* Cria thread de controlo PID->PWM */
+    k_thread_create(&control_data, control_stack,
+                    K_THREAD_STACK_SIZEOF(control_stack),
+                    control_thread, NULL, NULL, NULL,
+                    CONTROL_PRIO, 0, K_NO_WAIT);
 
-    /* --- Loop principal original (pode ficar só a dormir) --- */
+    /* Loop principal (sleep) */
     while (1) {
         k_msleep(SLEEP_TIME_MS);
     }
@@ -197,9 +190,7 @@ k_thread_create(&tc74_thread_data,    /* objecto da thread */
     return 0;
 }
 
-
-/* 2) Função que será corrida periodicamente pela thread TC74 */
-/* thread de leitura periódico do TC74 */
+/* Função que será corrida periodicamente pela thread TC74 */
 static void tc74_thread(void *unused1, void *unused2, void *unused3)
 {
     uint8_t temp;
@@ -208,11 +199,11 @@ static void tc74_thread(void *unused1, void *unused2, void *unused3)
     while (1) {
         ret = tc74_read(&temp);
         if (ret == 0) {
-            /* Sucesso: guarda na RTDB e opcionalmente imprime */
+            /* Sucesso: guarda na RTDB e imprime */
             rtdb_set_cur_temp(temp);
             printk("TC74-Thread: Temperatura = %d C\n", temp);
         } else {
-            /* Erro: sinaliza na RTDB e imprime */
+            /* Erro: sinaliza e imprime */
             rtdb_set_error_flag(true);
             printk("TC74-Thread: erro na leitura (%d)\n", ret);
         }
@@ -220,4 +211,21 @@ static void tc74_thread(void *unused1, void *unused2, void *unused3)
     }
 }
 
+/* Função da thread de controlo PID->PWM */
+static void control_thread(void *a, void *b, void *c)
+{
+    static pid_data_t pid;
+    pid_init(&pid, 5.0f, 0.0f, 0.0f);  /* Kp=5, P-only */
 
+    while (1) {
+        if (!rtdb_get_system_on()) {
+            heater_set_power(0);
+        } else {
+            int16_t sp = rtdb_get_setpoint();
+            uint8_t ct = rtdb_get_cur_temp();
+            float u = pid_compute(&pid, sp, (float)ct, CONTROL_PERIOD_MS / 1000.0f);
+            heater_set_power((uint8_t)u);
+        }
+        k_msleep(CONTROL_PERIOD_MS);
+    }
+}
