@@ -24,16 +24,17 @@
 #include "rtdb.h"
 #include "heater.h"
 #include "pid.h"
+//#include "uart.h"
 
 /* Definições gerais */
-#define SLEEP_TIME_MS    1000    ///< Sleep Time
+#define SLEEP_TIME_MS    1000    ///< Sleep Time in miliseconds
 
 /* UART RELATED VARIABLES */
 #define UART_NODE       DT_NODELABEL(uart0)   ///< UART node ID
 #define TBUFF_SIZE      60                    ///< Size of the transmission buffer
 #define RBUFF_SIZE      60                    ///< Size of the reception buffer
 #define MSG_BUFF_SIZE   100                   ///< Size of the message buffer
-#define RECEIVE_TIMEOUT 1000                  ///< Receive timeout
+#define RECEIVE_TIMEOUT 1000                  ///< Receive timeout in miliseconds
 
 static uint8_t tx_buff[TBUFF_SIZE];
 static uint8_t rx_buff[RBUFF_SIZE];
@@ -49,9 +50,9 @@ static struct k_thread tc74_thread_data;
 static void tc74_thread(void *arg1, void *arg2, void *arg3);
 
 /* --- Definições thread de controlo PID→PWM --- */
-#define CONTROL_PERIOD_MS 500
-#define CONTROL_PRIO      4
-#define CONTROL_STACK_SZ  512
+#define CONTROL_PERIOD_MS 500       ///< PID period in Miliseconds
+#define CONTROL_PRIO      4        ///< 
+#define CONTROL_STACK_SZ  512       ///< 
 K_THREAD_STACK_DEFINE(control_stack, CONTROL_STACK_SZ);
 static struct k_thread control_data;
 static void control_thread(void *arg1, void *arg2, void *arg3);
@@ -79,34 +80,45 @@ static struct gpio_callback button_cb_data1;
 static struct gpio_callback button_cb_data3;
 
 /* Callback functions for the buttons */
+/**
+ * @brief Function executed when the button 1 is pressed
+ * 
+ *  This function toggles the system state ON/OFF 
+ */
 void button_pressed0(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
-    printk("ON/OFF\r\n");
+    if(rtdb_get_system_on()== true){
+        rtdb_set_system_on(false);
+        printk("System turned OFF\r\n");
+    }else{
+        rtdb_set_system_on(true);
+        printk("System turned ON\r\n");
+    }
+
     gpio_pin_toggle_dt(&led0);
 }
 
+/**
+ * @brief Function executed when the button 2 is pressed
+ * 
+ *  This function increases the desired temperature 1ºC
+ */
 void button_pressed1(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
-    printk("Desired Temperature increased : xxºC\r\n");
+    int16_t curr_sp=rtdb_get_setpoint()+1;
+    rtdb_set_setpoint(curr_sp);
+    printk("Desired Temperature increased to %dºC\r\n",curr_sp);
 }
 
+/**
+ * @brief Function executed when the button 4 is pressed
+ *
+ *  This function decreases the desired temperature 1ºC
+ */
 void button_pressed3(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
-    printk("Desired Temperature decreased : xxºC\r\n");
+    int16_t curr_sp=rtdb_get_setpoint()-1;
+    rtdb_set_setpoint(curr_sp);
+    printk("Desired Temperature decreased to %dºC\r\n",curr_sp);
 }
 
-/* UART callback function */
-static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data) {
-    switch (evt->type) {
-    case UART_RX_RDY:
-        if (evt->data.rx.len == 1) {
-            printk("pressing button = %c \r\n", evt->data.rx.buf[evt->data.rx.offset]);
-        }
-        break;
-    case UART_RX_DISABLED:
-        uart_rx_enable(dev, rx_buff, sizeof(rx_buff), RECEIVE_TIMEOUT);
-        break;
-    default:
-        break;
-    }
-}
 
 int main(void)
 {
@@ -227,5 +239,22 @@ static void control_thread(void *a, void *b, void *c)
             heater_set_power((uint8_t)u);
         }
         k_msleep(CONTROL_PERIOD_MS);
+    }
+}
+
+
+/* UART callback function */
+static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data) {
+    switch (evt->type) {
+    case UART_RX_RDY:
+        if (evt->data.rx.len == 1) {
+            printk("pressing button = %c \r\n", evt->data.rx.buf[evt->data.rx.offset]);
+        }
+        break;
+    case UART_RX_DISABLED:
+        uart_rx_enable(dev, rx_buff, sizeof(rx_buff), RECEIVE_TIMEOUT);
+        break;
+    default:
+        break;
     }
 }

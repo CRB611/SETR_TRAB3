@@ -10,6 +10,7 @@
         "devicetree.h": "c",
         "uart.h": "c",
         "printk.h": "c",
-        "pwm.h": "c"
+        "pwm.h": "c",
+        "compare": "c"
     }
 }
