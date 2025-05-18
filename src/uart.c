@@ -3,6 +3,8 @@
 #include <math.h> 
 #include "uart.h"
 
+#include <zephyr/drivers/uart.h>
+
 static unsigned char UARTRxBuffer[UART_RX_SIZE];
 static unsigned char rxBufLen = 0; 
 
@@ -27,13 +29,21 @@ void resetRxBuffer(void)
 	return;
 }
 
-
 void resetTxBuffer(void)
 {
 	txBufLen = 0;		
 	return;
 }
 
+
+int calcChecksum(unsigned char * buf, int nbytes) {
+	unsigned int sum = 0 ;
+	
+	for(unsigned char* i = buf ; i < (buf+nbytes);i++ ){
+		sum += (unsigned int)(*i);
+	}
+	return (sum%256);		
+}
+
 int uart_process(void);
 
-int calcChecksum(unsigned char * buf, int nbytes);
