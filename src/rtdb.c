@@ -9,6 +9,7 @@ static uint8_t  cur_temp   = 0;
 static bool     error_flag = false;
 static int16_t  setpoint   = 40;   /* Default = 40°C */
 static bool     system_on  = true; /* Sistema ligado por defeito */
+static uint8_t  max_temp   = 100;  
 
 void rtdb_init(void)
 {
