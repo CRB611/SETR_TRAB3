@@ -5,12 +5,6 @@
 
 #include <zephyr/drivers/uart.h>
 
-static unsigned char UARTRxBuffer[UART_RX_SIZE];
-static unsigned char rxBufLen = 0; 
-
-static unsigned char UARTTxBuffer[UART_TX_SIZE];
-static unsigned char txBufLen = 0; 
-
 int init(void){
 
 	resetRxBuffer();
@@ -44,7 +38,7 @@ int calcChecksum(unsigned char * buf, int nbytes) {
 	return (sum%256);		
 }
 
-int uart_process(void){
+int uart_process(uint8_t *UARTRxBuffer, uint8_t *UARTTxBuffer){
 	unsigned int i=0,k=0;
 	unsigned char sid;
 		
@@ -223,7 +217,7 @@ unsigned int char2num(unsigned char ascii [], int length){
 /*
  * rxChar
  */
-int rxChar(unsigned char car)
+int rxChar(unsigned char car, uint8_t *UARTRxBuffer, int rxBufLen)
 {
 	/* If rxbuff not full add char to it */
 	if (rxBufLen < UART_RX_SIZE) {
@@ -238,7 +232,7 @@ int rxChar(unsigned char car)
 /*
  * txChar
  */
-int txChar(unsigned char car)
+int txChar(unsigned char car, uint8_t *UARTTxBuffer, int txBufLen)
 {
 	/* If rxbuff not full add char to it */
 	if (txBufLen < UART_TX_SIZE) {

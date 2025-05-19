@@ -24,7 +24,7 @@
 #include "rtdb.h"
 #include "heater.h"
 #include "pid.h"
-//#include "uart.h"
+#include "uart.h"
 
 /* Definições gerais */
 #define SLEEP_TIME_MS    1000    ///< Sleep Time in miliseconds
@@ -38,7 +38,9 @@
 
 static uint8_t tx_buff[TBUFF_SIZE];
 static uint8_t rx_buff[RBUFF_SIZE];
+static uint8_t rx_msg[RBUFF_SIZE];
 volatile int uart_rxbuf_nchar = 0;           ///< Number of chars currently in the rx buffer
+volatile int uart_txbuf_nchar = 0;           ///< Number of chars currently in the rx buffer
 static const struct device *uart = DEVICE_DT_GET(UART_NODE);
 
 /* --- Definições para a thread de leitura do TC74 --- */
@@ -197,6 +199,20 @@ int main(void)
     /* Loop principal (sleep) */
     while (1) {
         k_msleep(SLEEP_TIME_MS);
+        /*so pra ver se funciona*/
+        if(uart_rxbuf_nchar > 0) {
+            rx_chars[uart_rxbuf_nchar] = 0; /* Terminate the string */
+            uart_rxbuf_nchar = 0;           /* Reset counter */
+
+            sprintf(rep_mesg,"You typed [%s]\n\r",rx_chars);            
+            
+            err = uart_tx(uart_dev, rep_mesg, strlen(rep_mesg), SYS_FOREVER_MS);
+            if (err) {
+                printk("uart_tx() error. Error code:%d\n\r",err);
+                return FATAL_ERR;
+            }
+        }
+
     }
 
     return 0;
@@ -244,17 +260,58 @@ static void control_thread(void *a, void *b, void *c)
 
 
 /* UART callback function */
-static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data) {
+static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data)
+{
+    int err;
+
     switch (evt->type) {
-    case UART_RX_RDY:
-        if (evt->data.rx.len == 1) {
-            printk("pressing button = %c \r\n", evt->data.rx.buf[evt->data.rx.offset]);
-        }
-        break;
-    case UART_RX_DISABLED:
-        uart_rx_enable(dev, rx_buff, sizeof(rx_buff), RECEIVE_TIMEOUT);
-        break;
-    default:
-        break;
+	
+        case UART_TX_DONE:
+		    printk("UART_TX_DONE event \n\r");
+            break;
+
+    	case UART_TX_ABORTED:
+	    	printk("UART_TX_ABORTED event \n\r");
+		    break;
+		
+	    case UART_RX_RDY:
+		    printk("UART_RX_RDY event \n\r");
+            /* Just copy data to a buffer. */
+            /* Simple approach, just for illustration. In most cases it is necessary to use */
+            /*    e.g. a FIFO or a circular buffer to communicate with a task that shall process the messages*/
+            memcpy(&rx_msg[uart_rxbuf_nchar],&(rx_buff[evt->data.rx.offset]),evt->data.rx.len); 
+            uart_rxbuf_nchar += evt->data.rx.len;           
+		    break;
+
+	    case UART_RX_BUF_REQUEST:
+		    printk("UART_RX_BUF_REQUEST event \n\r");
+            /* Should be used to allow continuous reception */
+            /* To this end, declare at least two buffers and switch among them here */
+            /*      using function uart_rx_buf_rsp() */
+		    break;
+
+	    case UART_RX_BUF_RELEASED:
+		    printk("UART_RX_BUF_RELEASED event \n\r");
+		    break;
+		
+	    case UART_RX_DISABLED: 
+            /* When the RX_BUFF becomes full RX is disabled automaticaly.  */
+            /* It must be re-enabled manually for continuous reception */
+            printk("UART_RX_DISABLED event \n\r");
+		    err =  uart_rx_enable(uart ,rx_buff,sizeof(rx_buff),RECEIVE_TIMEOUT);
+            if (err) {
+                printk("uart_rx_enable() error. Error code:%d\n\r",err);
+                exit(-1);                
+            }
+		    break;
+
+	    case UART_RX_STOPPED:
+		    printk("UART_RX_STOPPED event \n\r");
+		    break;
+		
+	    default:
+            printk("UART: unknown event \n\r");
+		    break;
     }
+
 }
