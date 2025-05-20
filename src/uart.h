@@ -21,17 +21,7 @@
 #define COMMAND_ERROR -7
 #define FATAL_ERROR -8
 
-
-
-int uart_init(void);
-
-void resetRxBuffer(void);
-
-void resetTxBuffer(void);
-
 int calcChecksum(unsigned char * buf, int nbytes); 
-
-int uart_process(void);
 
  /**
   * \brief Converts an integer to a ASCII
@@ -49,18 +39,4 @@ int uart_process(void);
   */
 unsigned int char2num(unsigned char ascii [], int length);
 
- /**
-  * \brief Adds a char to the reception buffer
-  * \return OK if success
-  * \return FULL_BUFF if the buffer is full
-  */
- int rxChar(unsigned char car);
- 
- /**
-  * \brief Adds a char to the transmission buffer
-  * \return OK if success
-  * \return FULL_BUFF if the buffer is full
-  */
- int txChar(unsigned char car);
- 
 #endif

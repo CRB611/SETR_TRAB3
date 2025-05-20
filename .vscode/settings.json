@@ -11,6 +11,8 @@
         "uart.h": "c",
         "printk.h": "c",
         "pwm.h": "c",
-        "rtdb.h": "c"
+        "rtdb.h": "c",
+        "compare": "c",
+        "xutility": "c"
     }
 }

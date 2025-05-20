@@ -9,4 +9,5 @@ target_sources(app PRIVATE
     src/rtdb.c       # módulo RTDB
     src/pid.c
     src/heater.c
+    src/uart.c
 )
