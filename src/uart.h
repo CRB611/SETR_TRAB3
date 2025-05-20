@@ -5,7 +5,7 @@
 #define UART_H
 
 
-#define MAX_TEMP 100
+
 #define MAX_SIZE 20
  #define UART_RX_SIZE 30 	///< Maximum size of the RX buffer  
  #define UART_TX_SIZE 30 	///< Maximum size of the TX buffer 
@@ -38,5 +38,8 @@ int calcChecksum(unsigned char * buf, int nbytes);
   * \return Returns the int corresponding to the character array
   */
 unsigned int char2num(unsigned char ascii [], int length);
+
+float char2float(unsigned char ascii []);
+
 
 #endif

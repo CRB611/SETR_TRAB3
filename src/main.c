@@ -28,20 +28,18 @@
 
 /* Definições gerais */
 #define SLEEP_TIME_MS    1000    ///< Sleep Time
+#define MAX_TEMP 200             ///< Absolute maximum temperature
 
 /* UART RELATED VARIABLES */
 #define UART_NODE       DT_NODELABEL(uart0)   ///< UART node ID
-#define TBUFF_SIZE      60                    ///< Size of the transmission buffer
 #define RBUFF_SIZE      60                    ///< Size of the reception buffer
 #define RECEIVE_TIMEOUT 1000                  ///< Receive timeout
 /* Inactivity period after the instant when last char was received that triggers an rx event (in us) */
 
-static uint8_t tx_buff[TBUFF_SIZE];
 static uint8_t rx_buff[RBUFF_SIZE];
 static uint8_t rx_buff2[RBUFF_SIZE];
 static uint8_t rx_msg[RBUFF_SIZE];
 volatile int uart_rxbuf_nchar = 0;           ///< Number of chars currently in the rx buffer
-volatile int uart_txbuf_nchar = 0;           ///< Number of chars currently in the rx buffer
 static const struct device *uart = DEVICE_DT_GET(UART_NODE);
 bool buffer=1;
 
@@ -59,26 +57,26 @@ int uart_process();
 
 
 /* --- Definições para a thread de leitura do UART --- */
-#define UART_SAMPLE_PERIOD_MS   10000    /* período de amostragem, em ms */
-#define UART_THREAD_STACK_SIZE  512     /* tamanho da stack da thread */
-#define UART_THREAD_PRIORITY    4       /* prioridade da thread */
+#define UART_SAMPLE_PERIOD_MS   15000    ///< Sampling period, in miliseconds 
+#define UART_THREAD_STACK_SIZE  512     ///< Stack Size for the UART
+#define UART_THREAD_PRIORITY    4       ///< Thread Priority for the UART 
 K_THREAD_STACK_DEFINE(uart_stack, UART_THREAD_STACK_SIZE);
 static struct k_thread uart_thread_data;
 K_MUTEX_DEFINE(uart_mutex);
 static void uart_thread(void *arg1, void *arg2, void *arg3);
 
 /* --- Definições para a thread de leitura do TC74 --- */
-#define TC74_SAMPLE_PERIOD_MS   1000    /* período de amostragem, em ms */
-#define TC74_THREAD_STACK_SIZE  512     /* tamanho da stack da thread */
-#define TC74_THREAD_PRIORITY    5       /* prioridade da thread */
+#define TC74_SAMPLE_PERIOD_MS   1000    ///< Sampling period, in miliseconds 
+#define TC74_THREAD_STACK_SIZE  512     ///< tStack Size for the TC74
+#define TC74_THREAD_PRIORITY    5       ///< Thread Priority for the  TC74
 K_THREAD_STACK_DEFINE(tc74_stack, TC74_THREAD_STACK_SIZE);
 static struct k_thread tc74_thread_data;
 static void tc74_thread(void *arg1, void *arg2, void *arg3);
 
 /* --- Definições thread de controlo PID→PWM --- */
-#define CONTROL_PERIOD_MS 500
-#define CONTROL_PRIO      4
-#define CONTROL_STACK_SZ  512
+#define CONTROL_PERIOD_MS 500           ///<Sampling period, in miliseconds 
+#define CONTROL_PRIO      4            ///< Stack Size for the PID Controler
+#define CONTROL_STACK_SZ  512           ///<Thread Priority for the PID Controler
 K_THREAD_STACK_DEFINE(control_stack, CONTROL_STACK_SZ);
 static struct k_thread control_data;
 static void control_thread(void *arg1, void *arg2, void *arg3);
@@ -258,7 +256,7 @@ static void tc74_thread(void *unused1, void *unused2, void *unused3)
             /* Sucesso: guarda na RTDB e imprime */
             rtdb_set_cur_temp(temp);
             int setp= rtdb_get_setpoint();
-            //printk("\rTC74-Thread: Temperatura = %d C ; Desejada = %d \n", temp,setp);
+            printk("\rTC74-Thread: Temperatura = %d C ; Desejada = %d \n", temp,setp);
 
             if(temp>rtdb_get_setpoint()+2){
                 gpio_pin_set_dt(&led1,0);
@@ -308,6 +306,8 @@ static void control_thread(void *a, void *b, void *c)
 static void uart_thread(void *arg1, void *arg2, void *arg3){
    
     while(1) {
+        printk("\rUART-Thread:\n");
+
         /* Computation */
         k_mutex_lock(&uart_mutex, K_FOREVER);
         if (uart_rxbuf_nchar > 0) {
@@ -316,9 +316,6 @@ static void uart_thread(void *arg1, void *arg2, void *arg3){
             uart_rxbuf_nchar = 0;
         }
         k_mutex_unlock(&uart_mutex);
-
-         printk("\nuart thread\n");
-
         k_msleep(UART_SAMPLE_PERIOD_MS);
         
     }
@@ -333,7 +330,7 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
     switch (evt->type) {
 	
         case UART_TX_DONE:
-		    printk("UART_TX_DONE event \n\r");
+		    //printk("UART_TX_DONE event \n\r");
             break;
 
     	case UART_TX_ABORTED:
@@ -341,18 +338,11 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 		    break;
 		
 	    case UART_RX_RDY:
-		   // printk("UART_RX_RDY event \n\r");
-            /* Just copy data to a buffer. */
-            /* Simple approach, just for illustration. In most cases it is necessary to use */
-            /*    e.g. a FIFO or a circular buffer to communicate with a task that shall process the messages*/
-           
-            //memcpy(FIFO, &evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
+		   
            memcpy(&rx_msg[uart_rxbuf_nchar], &evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
-
            uart_rxbuf_nchar  += evt->data.rx.len;
 
-           printk("%c; nchar: %d \n", evt->data.rx.buf[evt->data.rx.offset],uart_rxbuf_nchar);
-
+          // printk("%c; nchar: %d \n", evt->data.rx.buf[evt->data.rx.offset],uart_rxbuf_nchar);
            break;
 
 	    case UART_RX_BUF_REQUEST:
@@ -366,7 +356,7 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 		    break;
 
 	    case UART_RX_BUF_RELEASED:
-		    printk("UART_RX_BUF_RELEASED event \n\r");
+		   // printk("UART_RX_BUF_RELEASED event \n\r");
 		    break;
 		
 	    case UART_RX_DISABLED: 
@@ -396,12 +386,6 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 int uart_process(){
 	unsigned int i=0,k=0;
 
-    for (size_t j = 0; j < uart_rxbuf_nchar; j++)
-    {
-        printk("%c",rx_msg[j]);
-    }
-    printk("\n");
-
 	/* Detect empty cmd string */
 	if(uart_rxbuf_nchar == 0)
 		return EMPTY_COMMAND; 
@@ -411,12 +395,21 @@ int uart_process(){
 		if(rx_msg[i] == SOF_SYM) {
 			break;
 		}else if (i == (unsigned int)uart_rxbuf_nchar-1){
+
+            for (size_t j = 0; j < uart_rxbuf_nchar; j++)
+            {
+                printk("%c", rx_msg[j]);
+            }
+            printk("\n");
+
+            printk(" Missing Start of Message error.");	
 			return SOF_ERROR;
 		}
 	}
+    printk("\ni: %d\n",i);
 
 	/* Checking correct end of message*/
-	for (k = 0; k <= MAX_SIZE; k++)
+	for (k = 0; k <= uart_rxbuf_nchar; k++)
 	{
 		if (rx_msg[k] == EOF_SYM)
 		{
@@ -424,24 +417,35 @@ int uart_process(){
 
 			// Se não acaba com o simbolo que deve dá erro
 		}
-		else if (k == MAX_SIZE - 1)
+		else if (k == uart_rxbuf_nchar - 1)
 		{
+            for (size_t j = i; j < uart_rxbuf_nchar; j++)
+            {
+                printk("%c", rx_msg[j]);
+            }
+            printk("\n");
+            printk(" Missing End of Message error.");	
 			return EOF_ERROR;
 		}
 	}
 
-	/* Checking correct checksum */
-	int chk = calcChecksum(&rx_msg[i + 1], k - 4); // inclui o tipo, sinal e valor
-	int chk_recv = char2num(&rx_msg[k - 3], 3);	 // os três dígitos ASCII
+    for (size_t j = i; j <= k; j++)
+    {
+        printk("%c", rx_msg[j]);
+    }
+    printk("\n");
 
+    /*getting the message length*/
+    int msg_len=k-i;
+
+	/* Checking correct checksum */
+	int chk = calcChecksum(&rx_msg[i + 1], msg_len - 4); // inclui o tipo, sinal e valor
+	int chk_recv = char2num(&rx_msg[k - 3], 3);	 // os três dígitos ASCII
+    
 	// verificar a checksum
 	if (chk != chk_recv)
 	{
-		for (size_t j = 0; j <= k; j++)
-		{
-			printk("%c",rx_msg[j]);
-		}
-		printk(" Checksum error.");	//perguntar ao stor
+		printk(" Checksum error.");	
 		return CHECKSUM_ERROR;
 	}
 
@@ -462,49 +466,43 @@ int uart_process(){
 					
 				rtdb_set_maxtemp((uint8_t)set_max_temp);
 
-				for (size_t j = 0; j < k; j++)
-				{
-					printk(rx_msg[j]);
-				}
 				
-				printk(" The max temp was set to: %d, %d is the checksum.\r\n",set_max_temp,chk_recv);
+				printk(" The max temp was set to: %d.\r\n",set_max_temp);
 				
 				return OK;
 			}
 			case 'S':
 			{
 				/*codigo codigo codigo*/
-				Kp= char2num(&rx_msg[i+2], 3);
-				Ti= char2num(&rx_msg[i+5], 3);
-			    Td= char2num(&rx_msg[i+8], 3);
+				Kp= char2float(&rx_msg[i+2]);
+				Ti= char2float(&rx_msg[i+6]);
+			    Td= char2float(&rx_msg[i+10]);
 				
-				for (size_t j = 0; j < k; j++)
-				{
-					printk(rx_msg[j]);
-				}
-				
-				printk(" The controller parameters were set to: Kp=%f, Ti=%f, Td=%f \n%d is the checksum.\r\n",Kp,Ti,Td,chk_recv);
+				printk(" The controller parameters were set to: Kp=%f, Ti=%f, Td=%f\r\n",Kp,Ti,Td);
 
 				return OK;
 				
 			}	
 			case 'C':
 			{
-    			unsigned char msg[]="#cxxxchk!";	
+    			printk(" No error.");
+
+                unsigned char msg[]="#cxxxchk!";	
 				
 				uint8_t temp=rtdb_get_cur_temp();
-
 				num2char(&msg[2],temp);
 
 				int check = calcChecksum(&msg[2], 16);
-				num2char(&msg[6], check);
+               
+				num2char(&msg[5], check);
 
-                int err = uart_tx(uart, tx_buff, sizeof(tx_buff), SYS_FOREVER_US);
+                int err = uart_tx(uart, msg, sizeof(msg), SYS_FOREVER_US);
                 if (err)
                 {
                     return err;
                 }
-
+                
+                printk("\n");
                 return OK;
 			}
 			default:
