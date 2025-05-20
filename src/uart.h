@@ -39,7 +39,7 @@ int uart_process(void);
   * \param num the integer to be converted
   * \param type 't' for temperature, 'h' for humidity, 'c' for c02 or checksum
   */
- void num2char(unsigned char *array, int num, char type);
+ void num2char(unsigned char *array, int num);
 
  /**
   * \brief Converts ASCII to int

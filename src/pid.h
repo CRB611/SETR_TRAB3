@@ -24,6 +24,9 @@ typedef struct {
  */
 void pid_init(pid_data_t *pid, float Kp, float Ti, float Td);
 
+
+void pid_set(pid_data_t *pid, float Kp, float Ti, float Td);
+
 /**
  * @brief Calcula a saída do controlador PID.
  *

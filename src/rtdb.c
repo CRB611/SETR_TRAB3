@@ -68,6 +68,22 @@ int16_t rtdb_get_setpoint(void)
     return v;
 }
 
+void rtdb_set_maxtemp(uint8_t mt)
+{
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    max_temp = mt;
+    k_mutex_unlock(&rtdb_mutex);
+}
+
+int16_t rtdb_get_maxtemp(void)
+{
+    int16_t v;
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    v = max_temp;
+    k_mutex_unlock(&rtdb_mutex);
+    return v;
+}
+
 void rtdb_set_system_on(bool on)
 {
     k_mutex_lock(&rtdb_mutex, K_FOREVER);

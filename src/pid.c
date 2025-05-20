@@ -9,6 +9,13 @@ void pid_init(pid_data_t *pid, float Kp, float Ti, float Td)
     pid->prev_error = 0.0f;
 }
 
+void pid_set(pid_data_t *pid, float Kp, float Ti, float Td)
+{
+    pid->Kp = Kp;
+    pid->Ti = Ti;
+    pid->Td = Td;
+}
+
 float pid_compute(pid_data_t *pid, int16_t setp, float meas, float dt_s)
 {
     if (dt_s <= 0.0f) {

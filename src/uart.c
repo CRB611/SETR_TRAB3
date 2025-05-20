@@ -2,6 +2,8 @@
 #include <string.h>
 #include <math.h> 
 #include "uart.h"
+#include "rtdb.h"
+#include "pid.h"
 
 #include <zephyr/drivers/uart.h>
 
@@ -38,7 +40,7 @@ int calcChecksum(unsigned char * buf, int nbytes) {
 	return (sum%256);		
 }
 
-int uart_process(uint8_t *UARTRxBuffer, uint8_t *UARTTxBuffer){
+int uart_process(uint8_t *UARTRxBuffer,int rxBufLen, uint8_t *UARTTxBuffer,int txBufLen){
 	unsigned int i=0,k=0;
 	unsigned char sid;
 		
@@ -102,7 +104,8 @@ int uart_process(uint8_t *UARTRxBuffer, uint8_t *UARTTxBuffer){
 					return ERROR_TOO_HOT;
 				}
 					
-				/*SET THE MAX TEMP AQUI*/
+				rtdb_set_maxtemp((uint8_t)set_max_temp);
+
 				for (size_t j = 0; j < k; j++)
 				{
 					printk(UARTRxBuffer[j]);
@@ -119,7 +122,8 @@ int uart_process(uint8_t *UARTRxBuffer, uint8_t *UARTTxBuffer){
 				int  TI= char2num(&UARTRxBuffer[i+5], 3);
 				int  TD= char2num(&UARTRxBuffer[i+8], 3);
 				
-				/*codigo codigo codigo*/
+				//pid_set();
+
 				for (size_t j = 0; j < k; j++)
 				{
 					printk(UARTRxBuffer[j]);
@@ -132,11 +136,30 @@ int uart_process(uint8_t *UARTRxBuffer, uint8_t *UARTTxBuffer){
 			}	
 			case 'C':
 			{
+				char start_msg="#c";	
+				err = uart_tx(uart, tx_buf, sizeof(tx_buf), SYS_FOREVER_US);
+						if (err) {
+						return err;
+						}
 				
-				txChar("#");
-				txChar("c");
 				/*resto*/
-				txChar("!");
+				uint8_t temp=rtdb_get_cur_temp();
+				unsigned char temp_c[3];
+				num2char(&temp[0],temp);
+
+				for (int j = 0; j < 3; j++){
+					txChar(temp[j]);
+				}
+
+				int check = calcChecksum(&UARTTxBuffer[2], 16);
+				unsigned char check_c[3];
+				num2char(&check_c[0], check, 'h');
+
+				for (int j = 0; j < 3; j++){
+					txChar(check_c[j]);
+				}
+
+				txChar("!",&UARTTxBuffer,txBufLen);
 				
 				return OK;
 			}
@@ -163,41 +186,16 @@ int uart_process(uint8_t *UARTRxBuffer, uint8_t *UARTTxBuffer){
 
 
 
-void num2char(unsigned char *array, int num, char type){
+void num2char(unsigned char *array, int num){
     int i = 0;
 	int len=3;
-
-	//checking what type of data it is
-	if (type=='t')
-	{
-		if (num>=0)
-		{
-			*array='+';
-		}else{
-			*array='-';
-		}
-		num=abs(num);
-		
-		len=2;
-
-		while (i < len) {
-			*(array + len-i) = (num % 10) + '0';
-			num /= 10;
-			i++;
-		} 
-		return;
-
-	}else if (type=='c'){
-		len=5;
-	}
 
 	while (i < len) {
 		*(array + len-i-1) = (num % 10) + '0';
 		num /= 10;
 		i++;
 	} 
-	
-    
+	    
 }
 
 unsigned int char2num(unsigned char ascii [], int length){
@@ -214,32 +212,3 @@ unsigned int char2num(unsigned char ascii [], int length){
 	return sum;
 }
 
-/*
- * rxChar
- */
-int rxChar(unsigned char car, uint8_t *UARTRxBuffer, int rxBufLen)
-{
-	/* If rxbuff not full add char to it */
-	if (rxBufLen < UART_RX_SIZE) {
-		UARTRxBuffer[rxBufLen] = car;
-		rxBufLen += 1;
-		return OK;		
-	}	
-	/* If cmd string full return error */
-	return FULL_BUFF;
-}
-
-/*
- * txChar
- */
-int txChar(unsigned char car, uint8_t *UARTTxBuffer, int txBufLen)
-{
-	/* If rxbuff not full add char to it */
-	if (txBufLen < UART_TX_SIZE) {
-		UARTTxBuffer[txBufLen] = car;
-		txBufLen += 1;
-		return OK;		
-	}	
-	/* If cmd string full return error */
-	return FULL_BUFF;
-}

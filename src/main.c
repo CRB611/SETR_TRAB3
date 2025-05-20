@@ -43,6 +43,9 @@ volatile int uart_rxbuf_nchar = 0;           ///< Number of chars currently in t
 volatile int uart_txbuf_nchar = 0;           ///< Number of chars currently in the rx buffer
 static const struct device *uart = DEVICE_DT_GET(UART_NODE);
 
+static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data);
+int uart_process();
+
 /* --- Definições para a thread de leitura do TC74 --- */
 #define TC74_SAMPLE_PERIOD_MS   1000    /* período de amostragem, em ms */
 #define TC74_THREAD_STACK_SIZE  512     /* tamanho da stack da thread */
@@ -58,6 +61,8 @@ static void tc74_thread(void *arg1, void *arg2, void *arg3);
 K_THREAD_STACK_DEFINE(control_stack, CONTROL_STACK_SZ);
 static struct k_thread control_data;
 static void control_thread(void *arg1, void *arg2, void *arg3);
+static int pid_change_flag=0;
+
 
 /* Setting up the buttons */
 #define SW0_NODE DT_ALIAS(sw0)  ///< NODE ID for Button 1
@@ -198,21 +203,8 @@ int main(void)
 
     /* Loop principal (sleep) */
     while (1) {
+
         k_msleep(SLEEP_TIME_MS);
-        /*so pra ver se funciona*/
-        if(uart_rxbuf_nchar > 0) {
-            rx_chars[uart_rxbuf_nchar] = 0; /* Terminate the string */
-            uart_rxbuf_nchar = 0;           /* Reset counter */
-
-            sprintf(rep_mesg,"You typed [%s]\n\r",rx_chars);            
-            
-            err = uart_tx(uart_dev, rep_mesg, strlen(rep_mesg), SYS_FOREVER_MS);
-            if (err) {
-                printk("uart_tx() error. Error code:%d\n\r",err);
-                return FATAL_ERR;
-            }
-        }
-
     }
 
     return 0;
@@ -244,6 +236,7 @@ static void control_thread(void *a, void *b, void *c)
 {
     static pid_data_t pid;
     pid_init(&pid, 5.0f, 0.0f, 0.0f);  /* Kp=5, P-only */
+
 
     while (1) {
         if (!rtdb_get_system_on()) {
@@ -280,7 +273,9 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
             /* Simple approach, just for illustration. In most cases it is necessary to use */
             /*    e.g. a FIFO or a circular buffer to communicate with a task that shall process the messages*/
             memcpy(&rx_msg[uart_rxbuf_nchar],&(rx_buff[evt->data.rx.offset]),evt->data.rx.len); 
-            uart_rxbuf_nchar += evt->data.rx.len;           
+            uart_rxbuf_nchar += evt->data.rx.len;   
+            
+            printk("%c\n",evt->data.rx.buf[evt->data.rx.offset]);
 		    break;
 
 	    case UART_RX_BUF_REQUEST:
@@ -313,5 +308,147 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
             printk("UART: unknown event \n\r");
 		    break;
     }
+
+}
+
+
+int uart_process(){
+	unsigned int i=0,k=0;
+	unsigned char sid;
+		
+    static uint8_t tx_buff[TBUFF_SIZE];
+    static uint8_t rx_buff[RBUFF_SIZE];
+    static uint8_t rx_msg[RBUFF_SIZE];
+    volatile int uart_rxbuf_nchar = 0;           ///< Number of chars currently in the rx buffer
+    volatile int uart_txbuf_nchar = 0;           ///< Number of chars currently in the rx buffer
+    static const struct device *uart = DEVICE_DT_GET(UART_NODE);
+
+
+	/* Detect empty cmd string */
+	if(uart_rxbuf_nchar == 0)
+		return EMPTY_COMMAND; 
+
+	/* Find index of SOF */
+	for(i=0; i < uart_rxbuf_nchar; i++) {
+		if(rx_buff[i] == SOF_SYM) {
+			break;
+		}else if (i == (unsigned int)uart_rxbuf_nchar-1){
+			return SOF_ERROR;
+		}
+	}
+
+	/* Checking correct end of message*/
+	for (k = 0; k <= MAX_SIZE; k++)
+	{
+		if (rx_buff[k] == EOF_SYM)
+		{
+			break;
+
+			// Se não acaba com o simbolo que deve dá erro
+		}
+		else if (k == MAX_SIZE - 1)
+		{
+			eraseRxBuff(uart_rxbuf_nchar);
+			return EOF_ERROR;
+		}
+	}
+
+	/* Checking correct checksum */
+	int chk = calcChecksum(&rx_buff[i + 1], k - 4); // inclui o tipo, sinal e valor
+	int chk_recv = char2num(&rx_buff[k - 3], 3);	 // os três dígitos ASCII
+
+	// verificar a checksum
+	if (chk != chk_recv)
+	{
+		for (size_t j = 0; j < k; j++)
+		{
+			printk("%c",rx_buff[j]);
+		}
+		printk(" Checksum error.");	//perguntar ao stor
+		return CHECKSUM_ERROR;
+	}
+
+	/* If a SOF and EOF, and the checksum is correct look for commands */
+	if(i < uart_rxbuf_nchar) {
+		//checking the command
+		switch(rx_buff[i+1]) { 
+			
+			case 'M':	
+			{	
+				/*getting the temperature to be set*/
+				int  set_max_temp= char2num(&rx_buff[i+2], 3);
+				
+				if (set_max_temp > MAX_TEMP)
+				{
+					return ERROR_TOO_HOT;
+				}
+					
+				rtdb_set_maxtemp((uint8_t)set_max_temp);
+
+				for (size_t j = 0; j < k; j++)
+				{
+					printk(rx_buff[j]);
+				}
+				
+				printk(" The max temp was set to: %d, %d is the checksum.\r\n",set_max_temp,chk_recv);
+				
+				return OK;
+			}
+			case 'S':
+			{
+				/*codigo codigo codigo*/
+				int  KP= char2num(&rx_buff[i+2], 3);
+				int  TI= char2num(&rx_buff[i+5], 3);
+				int  TD= char2num(&rx_buff[i+8], 3);
+				
+				//pid_set(pi);
+
+				for (size_t j = 0; j < k; j++)
+				{
+					printk(rx_buff[j]);
+				}
+				
+				printk(" The controller parameters were set to: Kp=%d, Ti=%d, Td=%d \n%d is the checksum.\r\n",KP,TI,TD,chk_recv);
+
+				return OK;
+				
+			}	
+			case 'C':
+			{
+    			unsigned char msg[]="#cxxxchk!";	
+				
+				uint8_t temp=rtdb_get_cur_temp();
+
+				num2char(&msg[2],temp);
+
+				int check = calcChecksum(&msg[2], 16);
+				num2char(&msg[6], check);
+
+                int err = uart_tx(uart, tx_buff, sizeof(tx_buff), SYS_FOREVER_US);
+                if (err)
+                {
+                    return err;
+                }
+
+                return OK;
+			}
+			default:
+			{
+				eraseRxBuff(uart_rxbuf_nchar);
+				
+				for (size_t j = 0; j < k; j++)
+				{
+					printk(rx_buff[j]);
+				}
+					
+				return COMMAND_ERROR;	
+			}				
+		}
+		
+		
+	}else
+	
+	/* Cmd string not null and SOF not found */
+	return FATAL_ERROR;
 
 }
