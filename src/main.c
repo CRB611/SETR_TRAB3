@@ -215,7 +215,7 @@ static void tc74_thread(void *unused1, void *unused2, void *unused3)
 static void control_thread(void *a, void *b, void *c)
 {
     static pid_data_t pid;
-    pid_init(&pid, 5.0f, 0.0f, 0.0f);  /* Kp=5, P-only */
+    pid_init(&pid, 3.0f, 30.0f, 0.0f);  
 
     while (1) {
         if (!rtdb_get_system_on()) {
@@ -224,6 +224,7 @@ static void control_thread(void *a, void *b, void *c)
             int16_t sp = rtdb_get_setpoint();
             uint8_t ct = rtdb_get_cur_temp();
             float u = pid_compute(&pid, sp, (float)ct, CONTROL_PERIOD_MS / 1000.0f);
+            
             heater_set_power((uint8_t)u);
         }
         k_msleep(CONTROL_PERIOD_MS);

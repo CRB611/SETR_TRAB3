@@ -15,7 +15,7 @@ void rtdb_init(void)
     k_mutex_init(&rtdb_mutex);
     cur_temp   = 0;
     error_flag = false;
-    setpoint   = 40;
+    setpoint   = 60;
     system_on  = true;
 }
 

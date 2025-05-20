@@ -33,6 +33,8 @@ void heater_set_power(uint8_t percent)
         percent = 100U;
     }
 
+    printk("PWM duty = %u%%\n", percent);
+
     uint32_t pulse_ns = (HEATER_PWM_PERIOD_NS * percent) / 100U;
 
     int ret = pwm_set(heater_pwm_dev,
