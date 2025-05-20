@@ -52,6 +52,16 @@ void    rtdb_set_setpoint(int16_t sp);
 int16_t rtdb_get_setpoint(void);
 
 /**
+ * @brief Define a temperatura maxima desejada (°C).
+ */
+void rtdb_set_maxtemp(uint8_t mt);
+
+/**
+ * @brief Obtém a temperatura maxima atual (°C).
+ */
+int16_t rtdb_get_maxtemp(void);
+
+/**
  * @brief Liga/desliga o sistema (heater).
  */
 void    rtdb_set_system_on(bool on);
