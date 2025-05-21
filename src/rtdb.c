@@ -13,12 +13,15 @@
 /* Mutex que protege todas as variáveis da RTDB */
 static struct k_mutex rtdb_mutex;
 
+
+
 /* Variáveis partilhadas da RTDB */
 static uint8_t  cur_temp   = 0;
 static bool     error_flag = false;
 static int16_t  setpoint   = 35;   /* Default = 40°C */
 static bool     system_on  = false; /* Sistema desligado por defeito */
-static uint8_t  max_temp   = 100;  
+static uint8_t  max_temp   = 90;  
+static rtdb_pid PID;
 
 void rtdb_init(void)
 {
@@ -27,7 +30,10 @@ void rtdb_init(void)
     error_flag = false;
     setpoint   = 35;
     system_on  = false;
-    max_temp   = 100;
+    max_temp   = 90;
+    PID.Kp= 3.0f;
+    PID.Ti=30.0f;
+    PID.Td=0.0f;  
 }
 
 void rtdb_set_cur_temp(uint8_t t)
@@ -108,4 +114,46 @@ bool rtdb_get_system_on(void)
     v = system_on;
     k_mutex_unlock(&rtdb_mutex);
     return v;
+}
+
+void rtdb_set_pid(float kp,float ti,float td){
+
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    PID.Kp= kp;
+    PID.Ti =ti;
+    PID.Td =td;
+    k_mutex_unlock(&rtdb_mutex);
+}
+
+
+rtdb_pid rtdb_get_pid(){
+    rtdb_pid v;
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    v.Kp = PID.Kp;
+    v.Td = PID.Td;
+    v.Ti = PID.Ti;
+    k_mutex_unlock(&rtdb_mutex);
+    return v;
+}
+
+
+void rtdb_print(){
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    printk("__________________________________\n|       VARIABLE         | VALUE |\n");
+    printk("|   Current temperature  |%4d   |\n",cur_temp);           
+    printk("|        Set Point       |%4d   |\n",setpoint);               
+    printk("|     Max Temperature    | %4d  |\n",max_temp);                
+    printf("|            Kp          |  %3.1f  |\n",PID.Kp);               
+    printf("|            Ti          |  %3.1f |\n",PID.Ti);               
+    printf("|            Td          |  %3.1f  |\n",PID.Td);               
+    printk("|        Error Flag      |%4d   |\n",error_flag);     
+    printk("|      System State      |");
+    if(system_on == true){
+        printk("  on   |\n");              
+    }else{
+        printk("  off  |\n");              
+    }
+    printk("\\________________________________/\n");
+
+    k_mutex_unlock(&rtdb_mutex);
 }

@@ -53,7 +53,6 @@ unsigned int char2num(unsigned char ascii [], int length){
 float char2float(unsigned char ascii []){
 	int i = 0, sum_1 = 0, mult = 10;
 	int x;
-	printf("start %s\n",ascii);
 	while(i < 2){
 		x= (ascii[i]-'0') *mult ;
 
@@ -62,9 +61,7 @@ float char2float(unsigned char ascii []){
 	  	i++;
 	}
 	/*skipping the point*/
-	printf("int: %d, float %f\n", sum_1, (float)sum_1);
 	i++;
-	printf("**.x -> %c\n",ascii[i]);
 	x=(ascii[i]-'0');
 	float x2=(float)x;
 	float sum=(float)sum_1+x2/10;

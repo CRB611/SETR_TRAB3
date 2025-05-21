@@ -36,8 +36,8 @@
 #define RBUFF_SIZE      60                    ///< Size of the reception buffer
 #define RECEIVE_TIMEOUT 1000                  ///< Receive timeout
 #define UART_SAMPLE_PERIOD_MS   15000    ///< Sampling period, in miliseconds 
-#define UART_THREAD_STACK_SIZE  512     ///< Stack Size for the UART
-#define UART_THREAD_PRIORITY    4       ///< Thread Priority for the UART 
+#define UART_THREAD_STACK_SIZE  1024     ///< Stack Size for the UART
+#define UART_THREAD_PRIORITY    3       ///< Thread Priority for the UART 
 
 static uint8_t rx_buff[RBUFF_SIZE];
 static uint8_t rx_buff2[RBUFF_SIZE];
@@ -111,9 +111,7 @@ static void tc74_thread(void *arg1, void *arg2, void *arg3);
 K_THREAD_STACK_DEFINE(control_stack, CONTROL_STACK_SZ);
 static struct k_thread control_data;
 static void control_thread(void *arg1, void *arg2, void *arg3);
-static volatile float Kp=3.0f;
-static volatile float Ti=30.0f;
-static volatile float Td=0.0f;
+
 
 /* Setting up the buttons */
 #define SW0_NODE DT_ALIAS(sw0)  ///< NODE ID for Button 1
@@ -147,17 +145,23 @@ void button_pressed0(const struct device *dev, struct gpio_callback *cb, uint32_
     if(rtdb_get_system_on()== true){
         rtdb_set_system_on(false);            
         printk("System turned OFF\r\n");
+        /*turning the leds off*/
         gpio_pin_set_dt(&led0,0);
-       // k_thread_suspend(&tc74_thread);
-        //k_thread_suspend(&uart_thread);
-       // k_thread_suspend(&control_thread);
+        gpio_pin_set_dt(&led1,0);
+        gpio_pin_set_dt(&led2,0);
+        gpio_pin_set_dt(&led3,0);
+        /*suspending the threads*/
+        k_thread_suspend(&tc74_thread_data);
+        k_thread_suspend(&uart_thread_data);
+        k_thread_suspend(&control_data);
     }else{
         rtdb_set_system_on(true);
         printk("System turned ON\r\n");
         gpio_pin_set_dt(&led0,1);
-        k_thread_resume(&tc74_thread);
-       // k_thread_resume(&uart_thread);
-        //k_thread_resume(&control_thread);
+        /*resuming the threads*/
+        k_thread_resume(&tc74_thread_data);
+        k_thread_resume(&uart_thread_data);
+        k_thread_resume(&control_data);
     }     
 }
 
@@ -182,6 +186,7 @@ void button_pressed3(const struct device *dev, struct gpio_callback *cb, uint32_
     rtdb_set_setpoint(curr_sp);
     printk("Desired Temperature decreased to %dºC\r\n",curr_sp);
 }
+
 
 
 /**
@@ -277,9 +282,14 @@ int main(void)
                     uart_thread, NULL, NULL, NULL,
                     UART_THREAD_PRIORITY, 0, K_NO_WAIT);
     
+        /*suspending the threads*/
+        k_thread_suspend(&tc74_thread_data);
+        k_thread_suspend(&uart_thread_data);
+        k_thread_suspend(&control_data);
 
     /* Loop principal (sleep) */
     while (1) {
+        rtdb_print();
         k_msleep(SLEEP_TIME_MS);
     }
 
@@ -327,9 +337,11 @@ static void tc74_thread(void *unused1, void *unused2, void *unused3)
 static void control_thread(void *a, void *b, void *c)
 {
     static pid_data_t pid;
-    pid_init(&pid, Kp, Ti, Td);  
+    rtdb_pid gpid= rtdb_get_pid(); 
+    pid_init(&pid, gpid.Kp, gpid.Ti, gpid.Td);  
 
     while (1) {
+        printk("Control Thread: ");
         if (!rtdb_get_system_on()) {
             heater_set_power(0);
         } else {
@@ -348,7 +360,7 @@ static void control_thread(void *a, void *b, void *c)
 static void uart_thread(void *arg1, void *arg2, void *arg3){
    
     while(1) {
-        printk("\rUART-Thread:\n");
+        printk("UART-Thread:\n");
 
         /* Computation */
         k_mutex_lock(&uart_mutex, K_FOREVER);
@@ -358,8 +370,9 @@ static void uart_thread(void *arg1, void *arg2, void *arg3){
             uart_rxbuf_nchar = 0;
         }
         k_mutex_unlock(&uart_mutex);
+
+        printk("------\n");
         k_msleep(UART_SAMPLE_PERIOD_MS);
-        
     }
 
 }
@@ -441,12 +454,10 @@ int uart_process(){
             }
             printk("\n");
 
-            printk(" Missing Start of Message error.");	
+            printk(" Missing Start of Message error.\n");	
 			return SOF_ERROR;
 		}
 	}
-    printk("\ni: %d\n",i);
-
 	/* Checking correct end of message*/
 	for (k = 0; k <= uart_rxbuf_nchar; k++)
 	{
@@ -463,7 +474,7 @@ int uart_process(){
                 printk("%c", rx_msg[j]);
             }
             printk("\n");
-            printk(" Missing End of Message error.");	
+            printk(" Missing End of Message error.\n");	
 			return EOF_ERROR;
 		}
 	}
@@ -484,7 +495,7 @@ int uart_process(){
 	// verificar a checksum
 	if (chk != chk_recv)
 	{
-		printk(" Checksum error.");	
+		printk(" Checksum error.\n");	
 		return CHECKSUM_ERROR;
 	}
 
@@ -512,19 +523,21 @@ int uart_process(){
 			}
 			case 'S':
 			{
-				/*codigo codigo codigo*/
-				Kp= char2float(&rx_msg[i+2]);
-				Ti= char2float(&rx_msg[i+6]);
-			    Td= char2float(&rx_msg[i+10]);
 				
-				printk(" The controller parameters were set to: Kp=%f, Ti=%f, Td=%f\r\n",Kp,Ti,Td);
-
+				float Kp= char2float(&rx_msg[i+2]);
+				float Ti= char2float(&rx_msg[i+6]);
+			    float Td= char2float(&rx_msg[i+10]);
+				
+                rtdb_set_pid(Kp,Ti,Td);
+                
+                printk("The controller parameters were set.\n");
+				
 				return OK;
 				
 			}	
 			case 'C':
 			{
-    			printk(" No error.");
+    			printk(" No error.\n");
 
                 unsigned char msg[]="#cxxxchk!";	
 				
@@ -551,7 +564,7 @@ int uart_process(){
                 {
                     printk("%c", rx_msg[j]);
                 }
-                printk(" Wrong command error.");
+                printk(" Wrong command error.\n");
 
                 return COMMAND_ERROR;	
 			}				

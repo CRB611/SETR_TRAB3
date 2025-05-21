@@ -27,6 +27,12 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
+typedef struct {
+    float Kp;        ///< Proportional Gain
+    float Ti;        ///< Integral Term (s); if zero, integral inative */
+    float Td;        ///< Derivative Term (s); if zero, derivative inative */
+} rtdb_pid;
+
 /**
  * @brief Initializes the RTDB.
  *
@@ -96,13 +102,22 @@ int16_t rtdb_get_maxtemp(void);
  * @brief  Turns the system ON/OFF.
  * \param on on to turn on, off to turn off
  */
-void    rtdb_set_system_on(bool on);
+void rtdb_set_system_on(bool on);
 
 /**
  * @brief Returns the system state.
  * \return on if system in on, off is system is off.
  */
 bool    rtdb_get_system_on(void);
+
+
+
+void rtdb_set_pid(float kp,float ti,float td);
+
+
+rtdb_pid rtdb_get_pid();
+
+void rtdb_print();
 
 #endif /* RTDB_H */
 
