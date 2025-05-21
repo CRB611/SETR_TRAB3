@@ -22,6 +22,15 @@
     pinctrl-names = "default", "sleep";
 };
 
+/*mudar o pin do pwm do 13(LED0) para o 10 (n tem nada lá ligado) */
+/*&pwm0_default {
+    phandle = < 0xd >;
+    group1 {
+        psels = < NRF_PSEL(PWM_OUT0, 0, 10) >;
+        nordic,invert;
+    };
+};*/
+
 / {
     aliases {
         /* alias continua igual */

@@ -1,3 +1,12 @@
+/** 
+ * \file pid.c
+ * \brief This file contains the implementation of the functions implemented in pid.h.
+ *
+ * \author Simão Ribeiro
+ * \author Celina Brito
+ * \date 04/06/2025
+ * \bug There are no known bugs.
+ */
 #include "pid.h"
 
 void pid_init(pid_data_t *pid, float Kp, float Ti, float Td)

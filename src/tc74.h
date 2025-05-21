@@ -1,10 +1,9 @@
 /**
  * @file tc74.h
- * @brief Interface para o sensor de temperatura TC74 via I²C.
+ * @brief I²C Interface to the TC47 temperature Sensor
  *
- * Este módulo fornece funções para inicializar o sensor TC74 e ler
- * a temperatura através do barramento I²C, utilizando a abstração 
- * do Zephyr DeviceTree.
+ * This module has the functions to initialize the TC74 sensor,
+ * read the temperature through the I²C bus, using the Zephyr DeviceTree
  */
 
 #ifndef TC74_H
@@ -14,18 +13,18 @@
 
 /**
  * @def TC74_CMD_RTR
- * @brief Registo interno do TC74 que contém a temperatura atual.
+ * @brief Internal TC47 register with the actual temperature.
  *
- * Deve ser enviado antes da leitura para colocar o ponteiro 
- * de leitura no registo de temperatura.
+ * Must be sent before the readinf to set the reading pointer in 
+ * the temperature register.
  */
 #define TC74_CMD_RTR  0x00
 
 /**
  * @def TC74_CMD_RWCR
- * @brief Registo de configuração do TC74.
+ * @brief TC47 configuration register.
  *
- * Permite ler ou escrever o registo de configuração do sensor.
+ * Allows reading or writing the sensor's configuration register.
  */
 #define TC74_CMD_RWCR 0x01
 
@@ -34,25 +33,25 @@ extern "C" {
 #endif
 
 /**
- * @brief Inicializa o sensor TC74.
+ * @brief Initialises the TC74 sensor.
  *
- * Verifica se o barramento I²C está pronto para comunicação e envia 
- * uma vez o comando @p TC74_CMD_RTR para assegurar que o ponteiro de 
- * leitura está no registo de temperatura.
+ * Checks if the I²C bus is ready to communication and send the command
+ * @p TC74_CMD_RTR  to assure that the reading pointer is in the temperature 
+ * register.
  *
- * @return 0 em caso de sucesso, valor negativo (<0) em caso de erro.
+ * @return 0 if success, negative value (<0) in error.
  */
 int tc74_init(void);
 
 /**
- * @brief Lê a temperatura atual do sensor TC74.
+ * @brief Reads the current TC74 sensor temperature.
  *
- * Executa uma leitura de 1 byte do registo de temperatura e converte
- * diretamente para graus Celsius (valor inteiro).
+ * Executes the reading of 1 byte from the temperature register and 
+ * converts it directly to Celsius Degrees (integer value).
  *
- * @param[out] out_temp Ponteiro para variável onde será armazenada
- *                      a temperatura lida (°C).
- * @return 0 em caso de sucesso, valor negativo (<0) em caso de erro.
+ * @param[out] out_temp Pointer to the variable where the read temperature (°C)
+ *                      will be stored.
+ * @return 0 if success, negative value (<0) in error.
  */
 int tc74_read(uint8_t *out_temp);
 

@@ -1,3 +1,12 @@
+/** 
+ * \file rtdb.c
+ * \brief This file contains the implementation and variables of the functions implemented in rtdb.h.
+ *
+ * \author Simão Ribeiro
+ * \author Celina Brito
+ * \date 04/06/2025
+ * \bug There are no known bugs.
+ */
 #include "rtdb.h"
 #include <zephyr/kernel.h>
 

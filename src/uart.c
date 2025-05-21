@@ -1,3 +1,12 @@
+/** 
+ * \file uart.c
+ * \brief This file contains the implementation of the functions implemented in uart.h.
+ *
+ * \author Simão Ribeiro
+ * \author Celina Brito
+ * \date 04/06/2025
+ * \bug There are no known bugs.
+ */
 #include <stdio.h>
 #include <string.h>
 #include <math.h> 

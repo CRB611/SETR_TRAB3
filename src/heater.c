@@ -1,5 +1,13 @@
-/* heater.c */
-
+/** 
+ * \file heater.c
+ * \brief This file contains the implementation of the functions implemented in heater.h.
+ *
+ *
+ * \author Simão Ribeiro
+ * \author Celina Brito
+ * \date 04/06/2025
+ * \bug There are no known bugs.
+ */
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/device.h>
@@ -33,7 +41,7 @@ void heater_set_power(uint8_t percent)
         percent = 100U;
     }
 
-  //  printk("PWM duty = %u%%\n", percent);
+    printk("PWM duty = %u%%\n", percent);
 
     uint32_t pulse_ns = (HEATER_PWM_PERIOD_NS * percent) / 100U;
 

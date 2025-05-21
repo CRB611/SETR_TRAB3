@@ -1,4 +1,82 @@
+/**
+@mainpage SETR Mini-Project - Prototyping a thermal process control system using the nordic nRF52840-DK and Zephyr
 
-@mainpage SETR Mini-Projeto 
+@brief This is our Mini-Project for our "Sistemas Embutidos e de Tempo Real" course, with the intention of aquainting us with using Zephyr, and with real
+time embedded systems, we were asked to make a thermal process control system using the nordic nRF52840-DK board and a TC47 heat sensor.
+This system has a PID controller that is responsible for ensuring that the temperature stays in the desired value.
+An user interface is also given through the Board LEDs and Buttons, as well as from UART communication, where various commands can be given to the system.
 
-@brief 
+@details 
+<b>Features</b><br>
+<ul>
+    <li><i>Initialization:</i> Initializing the System and all its components. </li>
+    <li><i>Command Processing: </i> The possible commands are all correctly processed. </li>
+    <li><i>Collection of data from the TC47 sensor:</i> Functions to aquire the sensor data. </li>
+
+elaborar
+</ul>
+
+<b>User interface:</b><br>
+The user interface can be done through LEDS, Buttons or through UART Communication.
+<i>LEDs and Buttons:</i>
+<ul>
+    <li><b>LED1:</b> Tuns on if the system is on; </li>
+    <li><b>LED1:</b> Turns on if the temperature is the desired temperature (+/- 2ºC); </li>
+    <li><b>LED2:</b> Turns on if the temperature is 2ºC or more bellow the desired temperature; </li>
+    <li><b>LED3:</b> Turns on if the temperature is 2ºC or more above the desired temperature; </li>
+    <br>
+    <li><b>Button1:</b> Turns the system ON/OFF; </li>
+    <li><b>Button2:</b> Increases the desired temperature 1ºC; </li>
+    <li><b>Button4:</b> Decreases the desired temperature 1ºC; </li>
+</ul>
+
+-----VOU AQUI----
+
+This communication made in ASCII follow the following format: #CMD DATA CHK! (without the spaces)
+<ul>
+    <li><b>'#':</b> A char representing the start of the frame; </li>
+    <li><b>'!':</b> A char representing the end of the frame; </li>
+    <li><b>A command:</b> A char representing the command, 'M'; </li>
+    <li><b>Data:</b> Additional data, if required; </li>
+    <li><b>The checksum:</b> The sum of the numerical value of the command and the data bytes, the number is sent in three chars. </li>
+</ul>
+
+
+<b>File Structure:</b><br>
+<ul>
+    <li><b><u>src</u></b> Folder where the module and main files are:
+        <ul>
+            <li><i>cmdproc.c:</i> Source file containing the implementation of the code needed for the module; </li>
+            <li><i>cmdproc.h:</i> Header file containing the functions, structures and macros needed for the module; </li>
+            <li><i>main.c:</i> Main file, where the tests and the module come together. </li>
+        </ul>
+    </li>
+    <li><b><u>tests</u></b> Folder where the test files are:
+        <ul>
+            <li><i>test.c:</i> Source file containing the implementation of the tests using UNITY; </li>
+            <li><i>test.h:</i> Header file containing the functions, structures and macros needed for the UNITY tests; </li>
+        </ul>
+    </li>
+     <li><b><u>build</u></b> Folder where the .o files are generated to.</li>
+     <li><b><u>unity</u></b> Folder where the files required to use UNITY are stored.</li>
+     <li><i>makefile</i> The makefile that allows us to run the code.</li>
+</ul>
+
+
+<b>Usage:</b><br>
+To use this module run the make command on the main folder, this will generate the .o files in the build directory and the main executable on the base directory.
+After the main executable is generated run ./main to execute.
+
+<b>Test scenarios covered:</b><br>
+<ul>
+    <li><i>Initialization:</i> Initialization of the module.</li>
+    <li><i>Command processing:</i> Each command is tested, including occurences where a wrong command or data is sent</li>
+    <li><i>Checksum:</i> The checksum is tested.</li>
+    <li><i>Convertion:</i> The ASCII to int and int to ASCII conversions are also tested.</li>
+    <li><i>Buffers:</i> Buffer processes like adding elements and geting data are tested.</li>
+</ul>
+
+@author Celina Brito
+@author Simão Ribeiro
+*/
+*/

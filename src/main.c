@@ -1,6 +1,6 @@
 /** 
  * \file main.c
- * \brief This file contains all the structures and functions needed for the code as well as the main program.
+ * \brief This file contains the structures and functions needed for the code as well as the main program.
  *
  *        blablabla
  *
@@ -29,46 +29,71 @@
 /* Definições gerais */
 #define SLEEP_TIME_MS    1000    ///< Sleep Time
 #define MAX_TEMP 200             ///< Absolute maximum temperature
+#define OK 0                    ///< Return if everything is alright
 
 /* UART RELATED VARIABLES */
 #define UART_NODE       DT_NODELABEL(uart0)   ///< UART node ID
 #define RBUFF_SIZE      60                    ///< Size of the reception buffer
 #define RECEIVE_TIMEOUT 1000                  ///< Receive timeout
-/* Inactivity period after the instant when last char was received that triggers an rx event (in us) */
+#define UART_SAMPLE_PERIOD_MS   15000    ///< Sampling period, in miliseconds 
+#define UART_THREAD_STACK_SIZE  512     ///< Stack Size for the UART
+#define UART_THREAD_PRIORITY    4       ///< Thread Priority for the UART 
 
 static uint8_t rx_buff[RBUFF_SIZE];
 static uint8_t rx_buff2[RBUFF_SIZE];
 static uint8_t rx_msg[RBUFF_SIZE];
 volatile int uart_rxbuf_nchar = 0;           ///< Number of chars currently in the rx buffer
 static const struct device *uart = DEVICE_DT_GET(UART_NODE);
-bool buffer=1;
+bool buffer=1;                              ///< Variable for defining wich receive buffer is on
 
-/*struct for uart construck*/
-const struct uart_config uart_cfg = {
+const struct uart_config uart_cfg = {          
 		.baudrate = 115200,
 		.parity = UART_CFG_PARITY_NONE,
 		.stop_bits = UART_CFG_STOP_BITS_1,
 		.data_bits = UART_CFG_DATA_BITS_8,
 		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE
-};
+};       ///<struct for UART configuration
 
 static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data);
-int uart_process();
 
+/**
+ * \brief function that defines the Uart Mutex
+ * \param uart_mutex name for the mutex
+ */ 
+K_MUTEX_DEFINE(uart_mutex);
 
-/* --- Definições para a thread de leitura do UART --- */
-#define UART_SAMPLE_PERIOD_MS   15000    ///< Sampling period, in miliseconds 
-#define UART_THREAD_STACK_SIZE  512     ///< Stack Size for the UART
-#define UART_THREAD_PRIORITY    4       ///< Thread Priority for the UART 
+/**
+ * \brief function that defines the Uart K_thread Stack
+ * \param uart_stack name for the stack
+ * \param UART_THREAD_STACK_SIZE size of the stack
+ */ 
 K_THREAD_STACK_DEFINE(uart_stack, UART_THREAD_STACK_SIZE);
 static struct k_thread uart_thread_data;
-K_MUTEX_DEFINE(uart_mutex);
 static void uart_thread(void *arg1, void *arg2, void *arg3);
+
+/**
+ * \brief UART commands processing function
+ * 
+ *  This function processes the UART received commands, by checking for SOF and EOF symbols,
+ * checking the checksum and then processing and anwering the commands.AAR_ENABLE_ENABLE_Msk
+ * 
+ * \return OK if all went well, EOF_ERROR if the message does not have a EOF symbol, 
+ * SOF_ERROR if the message does not have a SOF symbol, CHECKSUM_ERROR if the received checksum is wrong,
+ * ERROR_TOO_HOT if the absolute max temperature is exceeded, COMMAND_ERROR if the command does not exist,
+ * FATAL_ERROR for any other errors
+ */
+int uart_process();
 
 /* --- Definições para a thread de leitura do TC74 --- */
 #define TC74_SAMPLE_PERIOD_MS   1000    ///< Sampling period, in miliseconds 
 #define TC74_THREAD_STACK_SIZE  512     ///< tStack Size for the TC74
 #define TC74_THREAD_PRIORITY    5       ///< Thread Priority for the  TC74
+
+/**
+ * \brief function that defines the tc74 K_thread Stack
+ * \param tc74_stack name for the stack
+ * \param TC74_THREAD_STACK_SIZE size of the stack
+ */ 
 K_THREAD_STACK_DEFINE(tc74_stack, TC74_THREAD_STACK_SIZE);
 static struct k_thread tc74_thread_data;
 static void tc74_thread(void *arg1, void *arg2, void *arg3);
@@ -77,6 +102,12 @@ static void tc74_thread(void *arg1, void *arg2, void *arg3);
 #define CONTROL_PERIOD_MS 500           ///<Sampling period, in miliseconds 
 #define CONTROL_PRIO      4            ///< Stack Size for the PID Controler
 #define CONTROL_STACK_SZ  512           ///<Thread Priority for the PID Controler
+
+/**
+ * \brief function that defines the PID control K_thread Stack
+ * \param control_stack name for the stack
+ * \param CONTROL_STACK_SZ size of the stack
+ */ 
 K_THREAD_STACK_DEFINE(control_stack, CONTROL_STACK_SZ);
 static struct k_thread control_data;
 static void control_thread(void *arg1, void *arg2, void *arg3);
@@ -117,10 +148,16 @@ void button_pressed0(const struct device *dev, struct gpio_callback *cb, uint32_
         rtdb_set_system_on(false);            
         printk("System turned OFF\r\n");
         gpio_pin_set_dt(&led0,0);
+       // k_thread_suspend(&tc74_thread);
+        //k_thread_suspend(&uart_thread);
+       // k_thread_suspend(&control_thread);
     }else{
         rtdb_set_system_on(true);
         printk("System turned ON\r\n");
         gpio_pin_set_dt(&led0,1);
+        k_thread_resume(&tc74_thread);
+       // k_thread_resume(&uart_thread);
+        //k_thread_resume(&control_thread);
     }     
 }
 
@@ -146,6 +183,11 @@ void button_pressed3(const struct device *dev, struct gpio_callback *cb, uint32_
     printk("Desired Temperature decreased to %dºC\r\n",curr_sp);
 }
 
+
+/**
+ * \brief main function 
+ * \return 0 if everithing is alright, error if something is wrong.
+ */
 int main(void)
 {
     int ret;
@@ -195,7 +237,7 @@ int main(void)
     gpio_pin_configure_dt(&led1, GPIO_OUTPUT_INACTIVE);
     gpio_pin_configure_dt(&led2, GPIO_OUTPUT_INACTIVE);
     gpio_pin_configure_dt(&led3, GPIO_OUTPUT_INACTIVE);
-    gpio_pin_set_dt(&led0,0);
+
 
     /* Inicialização dos botões */
     if (!device_is_ready(button0.port) ||
@@ -386,9 +428,6 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 int uart_process(){
 	unsigned int i=0,k=0;
 
-	/* Detect empty cmd string */
-	if(uart_rxbuf_nchar == 0)
-		return EMPTY_COMMAND; 
 
 	/* Find index of SOF */
 	for(i=0; i < uart_rxbuf_nchar; i++) {
