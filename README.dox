@@ -37,7 +37,7 @@ An user interface is also given through the Board LEDs and Buttons, as well as f
 
 
  <b>System Architecture Diagram:</b><br>
- <img src="" alt="System Architecture" style="width: 600px;"/>
+   <img src="https://github.com/CRB611/SETR_TRAB3/blob/main/Sys_Architechture_Diag.png?raw=true" alt="System Architecture" style="width: 800px;"/>
 
 <b>User interface:</b><br>
 The user interface can be done through LEDS, Buttons or through UART Communication.
