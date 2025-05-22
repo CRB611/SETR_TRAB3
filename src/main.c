@@ -20,16 +20,18 @@
 #include <string.h>
 
 /* nosso módulo I²C/TC74 */
-#include "tc74.h"
-#include "rtdb.h"
-#include "heater.h"
-#include "pid.h"
-#include "uart.h"
+#include "../modules/tc74.h"
+#include "../modules/rtdb.h"
+#include "../modules/heater.h"
+#include "../modules/pid.h"
+#include "../modules/uart.h"
 
 /* Definições gerais */
 #define SLEEP_TIME_MS    1000    ///< Sleep Time
 #define MAX_TEMP 200             ///< Absolute maximum temperature
 #define OK 0                    ///< Return if everything is alright
+
+static bool table_flag=false;
 
 /* UART RELATED VARIABLES */
 #define UART_NODE       DT_NODELABEL(uart0)   ///< UART node ID
@@ -116,9 +118,11 @@ static void control_thread(void *arg1, void *arg2, void *arg3);
 /* Setting up the buttons */
 #define SW0_NODE DT_ALIAS(sw0)  ///< NODE ID for Button 1
 #define SW1_NODE DT_ALIAS(sw1)  ///< NODE ID for Button 2
+#define SW2_NODE DT_ALIAS(sw2)  ///< NODE ID for Button 3
 #define SW3_NODE DT_ALIAS(sw3)  ///< NODE ID for Button 4
 static const struct gpio_dt_spec button0 = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 static const struct gpio_dt_spec button1 = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
+static const struct gpio_dt_spec button2 = GPIO_DT_SPEC_GET(SW2_NODE, gpios);
 static const struct gpio_dt_spec button3 = GPIO_DT_SPEC_GET(SW3_NODE, gpios);
 
 /* Setting up the LEDs */
@@ -133,6 +137,7 @@ static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(LED3_NODE, gpios);
 
 static struct gpio_callback button_cb_data0;
 static struct gpio_callback button_cb_data1;
+static struct gpio_callback button_cb_data2;
 static struct gpio_callback button_cb_data3;
 
 /* Callback functions for the buttons */
@@ -171,9 +176,35 @@ void button_pressed0(const struct device *dev, struct gpio_callback *cb, uint32_
  *  This function increases the desired temperature 1ºC
  */
 void button_pressed1(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
-    int16_t curr_sp=rtdb_get_setpoint()+1;
-    rtdb_set_setpoint(curr_sp);
-    printk("Desired Temperature increased to %dºC\r\n",curr_sp);
+    
+    if(rtdb_get_system_on()== true){
+        int16_t curr_sp=rtdb_get_setpoint()+1;
+        rtdb_set_setpoint(curr_sp);
+        printk("Desired Temperature increased to %dºC\r\n",curr_sp);
+    }
+
+    return;
+}
+
+/**
+ * @brief Function executed when the button 3 is pressed
+ * 
+ *  The button 3 is pressed to toggle the printing of the RTDB table,
+*/
+void button_pressed2(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
+    
+    if(rtdb_get_system_on()== true){
+        table_flag=!table_flag;
+
+        if(table_flag){
+            printk("RTDB Table ON\n");
+        }else{
+            printk("RTDB Table OFF\n");
+
+        }
+    }
+
+    return;
 }
 
 /**
@@ -182,9 +213,13 @@ void button_pressed1(const struct device *dev, struct gpio_callback *cb, uint32_
  *  This function decreases the desired temperature 1ºC
  */
 void button_pressed3(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
+    
+    if(rtdb_get_system_on()== true){
     int16_t curr_sp=rtdb_get_setpoint()-1;
     rtdb_set_setpoint(curr_sp);
     printk("Desired Temperature decreased to %dºC\r\n",curr_sp);
+    }
+     return;
 }
 
 
@@ -247,19 +282,27 @@ int main(void)
     /* Inicialização dos botões */
     if (!device_is_ready(button0.port) ||
         !device_is_ready(button1.port) ||
+        !device_is_ready(button2.port) ||
         !device_is_ready(button3.port)) {
         printk("Buttons not ready\r\n");
         return -1;
     }
     gpio_pin_configure_dt(&button0, GPIO_INPUT);
     gpio_pin_configure_dt(&button1, GPIO_INPUT);
+    gpio_pin_configure_dt(&button2, GPIO_INPUT);
     gpio_pin_configure_dt(&button3, GPIO_INPUT);
     gpio_init_callback(&button_cb_data0, button_pressed0, BIT(button0.pin));
     gpio_add_callback(button0.port, &button_cb_data0);
     gpio_pin_interrupt_configure_dt(&button0, GPIO_INT_EDGE_TO_ACTIVE);
+    
     gpio_init_callback(&button_cb_data1, button_pressed1, BIT(button1.pin));
     gpio_add_callback(button1.port, &button_cb_data1);
     gpio_pin_interrupt_configure_dt(&button1, GPIO_INT_EDGE_TO_ACTIVE);
+    
+    gpio_init_callback(&button_cb_data2, button_pressed2, BIT(button2.pin));
+    gpio_add_callback(button2.port, &button_cb_data2);
+    gpio_pin_interrupt_configure_dt(&button2, GPIO_INT_EDGE_TO_ACTIVE);
+    
     gpio_init_callback(&button_cb_data3, button_pressed3, BIT(button3.pin));
     gpio_add_callback(button3.port, &button_cb_data3);
     gpio_pin_interrupt_configure_dt(&button3, GPIO_INT_EDGE_TO_ACTIVE);
@@ -287,9 +330,14 @@ int main(void)
         k_thread_suspend(&uart_thread_data);
         k_thread_suspend(&control_data);
 
+        printk("SYSTEM START\n");
     /* Loop principal (sleep) */
     while (1) {
-        rtdb_print();
+        if(rtdb_get_system_on()== true){
+            if(table_flag==true){
+                rtdb_print();}    
+        }
+        
         k_msleep(SLEEP_TIME_MS);
     }
 
@@ -557,6 +605,13 @@ int uart_process(){
                 printk("\n");
                 return OK;
 			}
+            case 'R':
+            {
+                rtdb_reset();
+    			printk(" The adjustable parameters were reset.\n");
+                return OK;
+            }    
+
 			default:
 			{
 

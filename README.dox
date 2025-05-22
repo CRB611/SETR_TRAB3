@@ -1,7 +1,7 @@
 /**
 @mainpage SETR Mini-Project - Prototyping a thermal process control system using the nordic nRF52840-DK and Zephyr
 
-@brief This is our Mini-Project for our "Sistemas Embutidos e de Tempo Real" course, with the intention of aquainting us with using Zephyr, and with real
+@brief This is our Mini-Project for our "Embedded and Real-Time Systems" course, with the intention of aquainting us with using Zephyr, and with real
 time embedded systems, we were asked to make a thermal process control system using the nordic nRF52840-DK board and a TC47 heat sensor.
 This system has a PID controller that is responsible for ensuring that the temperature stays in the desired value.
 An user interface is also given through the Board LEDs and Buttons, as well as from UART communication, where various commands can be given to the system.
@@ -9,12 +9,35 @@ An user interface is also given through the Board LEDs and Buttons, as well as f
 @details 
 <b>Features</b><br>
 <ul>
-    <li><i>Initialization:</i> Initializing the System and all its components. </li>
-    <li><i>Command Processing: </i> The possible commands are all correctly processed. </li>
+    <li><i>Initialization:</i> Initializing the System and all its components; </li>
+    <li><i>Real-Time Database (RTDB):</i> Used to synchronize data between all the modules involved in the project; </li>
+    <li><i>Multithreading:</i> Various processes are conducted using threads to guarantee; </li>
+    <li><i>UART communication;</i></li>
+    <li><i>I²C communication;</i></li>
+    <li><i>Board user interface:</i> The nrf52840dk_nrf52840 board buttons and LEDs are used to help the user experience; </li>
+    <li><i>Command Processing: </i> The possible commands are all correctly processed; </li>
     <li><i>Collection of data from the TC47 sensor:</i> Functions to aquire the sensor data. </li>
-
-elaborar
 </ul>
+
+<b>System Architecture:</b><br>
+<ul>
+    <li><i>Real-Time Database (RTDB):</i> Stores the status of the databas variables:</li>
+    <ul>
+        <li><i>Current temperature:</i> Current temperature being mesured by the heat sensor. </li>
+        <li><i>Current setpoint:</i> Temperature setpoint, default is 35ºC. </li>
+        <li><i>Max temperature</i> Max allowed temperature, if the system reaches this temperature an error will be issued, default is 100ºC. </li>
+        <li><i>Error flag:</i> If theres an error flag on. </li>
+        <li><i>System State:</i> Tells if the system is on or off. </li>
+        <li><i>PID parameters:</i> Kp, Ti, Td parameters of the PID controller. </li>
+    </ul>
+    <li><i>UART_Thread:</i> Periodically reads the UART receive buffer and processes the messages.</li>
+    <li><i>TC47_Thread:</i> Periodically runs the PID controller and adjusts the heater acordingly.</li>
+    <li><i>Control_Thread:</i> Periodically reads the current temperature</li>
+</ul>
+
+
+ <b>System Architecture Diagram:</b><br>
+ <img src="" alt="System Architecture" style="width: 600px;"/>
 
 <b>User interface:</b><br>
 The user interface can be done through LEDS, Buttons or through UART Communication.
@@ -27,28 +50,49 @@ The user interface can be done through LEDS, Buttons or through UART Communicati
     <br>
     <li><b>Button1:</b> Turns the system ON/OFF; </li>
     <li><b>Button2:</b> Increases the desired temperature 1ºC; </li>
-    <li><b>Button4:</b> Decreases the desired temperature 1ºC; </li>
+    <li><b>Button3:</b> Toggles the RTDB Table display; </li>
+    <li><b>Button4:</b> Decreases the desired temperature 1ºC. </li>
 </ul>
-
------VOU AQUI----
 
 This communication made in ASCII follow the following format: #CMD DATA CHK! (without the spaces)
 <ul>
     <li><b>'#':</b> A char representing the start of the frame; </li>
     <li><b>'!':</b> A char representing the end of the frame; </li>
-    <li><b>A command:</b> A char representing the command, 'M'; </li>
-    <li><b>Data:</b> Additional data, if required; </li>
-    <li><b>The checksum:</b> The sum of the numerical value of the command and the data bytes, the number is sent in three chars. </li>
+    <li><b>CMD:</b> A char representing the command; </li>
+    <li><b>DATA:</b> Additional data, if required; </li>
+    <li><b>CHK:</b> The modulo-256 checksum, which is the numerical sum of the command and data bytes.</li> 
 </ul>
+
+The existing commands are:
+<ul>
+    <li><b>'M':</b> Sets the maximum temperature to the one sent in the data portion; </li>
+    <li><b>'C':</b> Returns de current temperature; </li>
+    <li><b>'S':</b> Sets the PID controller parameters to the ones sent in the data portion; </li>
+    <li><b>'R':</b> Resets the adjustable RTDB parameters (max temperature, desired temperature, PID parameters); </li>
+</ul>
+
+-----VOU AQUI----
 
 
 <b>File Structure:</b><br>
 <ul>
-    <li><b><u>src</u></b> Folder where the module and main files are:
+    <li><b><u>src</u></b> Folder where the main files are:
         <ul>
-            <li><i>cmdproc.c:</i> Source file containing the implementation of the code needed for the module; </li>
-            <li><i>cmdproc.h:</i> Header file containing the functions, structures and macros needed for the module; </li>
             <li><i>main.c:</i> Main file, where the tests and the module come together. </li>
+        </ul>
+    </li> 
+    <li><b><u>modules</u></b> Folder where the modules are:
+        <ul>
+            <li><i>heater.c:</i> Source file containing the heater implementation. </li>
+            <li><i>heater.h:</i> Header file containing the functions, structures and macros needed for the heater implementation. </li>
+            <li><i>pid.c:</i> Source file containing the PID implementation. </li>
+            <li><i>pid.h:</i> Header file containing the functions, structures and macros needed for the PID controller implementation. </li>
+            <li><i>rtdb.c:</i> Source file containing the RTDB implementation. </li>
+            <li><i>rtdb.h:</i> Header file containing the functions, structures and macros needed for the RTDB implementation. </li>
+            <li><i>tc74.c:</i> Source file containing the TC47 implementation. </li>
+            <li><i>tc74.h:</i> Header file containing the functions, structures and macros needed for the TC74 implementation. </li>
+            <li><i>uart.c:</i> Source file containing the UART helping functions. </li>
+            <li><i>uart.h:</i> Header file containing the functions, structures and macros needed for the UART implementation. </li>
         </ul>
     </li>
     <li><b><u>tests</u></b> Folder where the test files are:
@@ -57,9 +101,11 @@ This communication made in ASCII follow the following format: #CMD DATA CHK! (wi
             <li><i>test.h:</i> Header file containing the functions, structures and macros needed for the UNITY tests; </li>
         </ul>
     </li>
-     <li><b><u>build</u></b> Folder where the .o files are generated to.</li>
+     <li><b><u>build</u></b> Folder where the object files are generated to.</li>
      <li><b><u>unity</u></b> Folder where the files required to use UNITY are stored.</li>
-     <li><i>makefile</i> The makefile that allows us to run the code.</li>
+     <li><i>CMakeLists.txt:</i> The file that allows us to run the code.</li>
+     <li><i>prj.conf:</i> Zephyr configuration file.</li>
+     <li><i>nrf52840dk_nrf52840.overlay:</i> Overlay file required to make some changes in the nrf52840dk_nrf52840 board.</li>
 </ul>
 
 

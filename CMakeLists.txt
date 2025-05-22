@@ -5,9 +5,9 @@ project(SETR_TRAB3)
 
 target_sources(app PRIVATE
     src/main.c
-    src/tc74.c       # módulo I²C/TC74
-    src/rtdb.c       # módulo RTDB
-    src/pid.c
-    src/heater.c
-    src/uart.c
+    modules/tc74.c       # módulo I²C/TC74
+    modules/rtdb.c       # módulo RTDB
+    modules/pid.c
+    modules/heater.c
+    modules/uart.c
 )
