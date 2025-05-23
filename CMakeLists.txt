@@ -11,3 +11,4 @@ target_sources(app PRIVATE
     modules/heater.c
     modules/uart.c
 )
+
