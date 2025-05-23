@@ -1,41 +1,47 @@
-/** 
+/**
  * \file rtdb.c
- * \brief This file contains the implementation and variables of the functions implemented in rtdb.h.
+ * \brief Implementação das funções e variáveis do RTDB.
  *
  * \author Simão Ribeiro
  * \author Celina Brito
  * \date 04/06/2025
- * \bug There are no known bugs.
+ * \bug Não existem bugs conhecidos.
  */
 #include "rtdb.h"
 #include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 
 /* Mutex que protege todas as variáveis da RTDB */
 static struct k_mutex rtdb_mutex;
 
-
-
 /* Variáveis partilhadas da RTDB */
-static uint8_t  cur_temp   = 0;
-static bool     error_flag = false;
-static int16_t  setpoint   = 35;   /* Default = 40°C */
-static bool     system_on  = false; /* Sistema desligado por defeito */
-static uint8_t  max_temp   = 90;  
-static rtdb_pid PID;
+static uint8_t   cur_temp   = 0;
+static bool      error_flag = false;
+static int16_t   setpoint   = 35;   /* Default = 35°C */
+static bool      system_on  = false; /* Sistema desligado por defeito */
+static uint8_t   max_temp   = 90;    /* Default = 90°C */
+static rtdb_pid  PID;                /* Parâmetros PID */
 
+/**
+ * @brief Inicializa a RTDB com os valores por defeito.
+ */
 void rtdb_init(void)
 {
     k_mutex_init(&rtdb_mutex);
+
+    k_mutex_lock(&rtdb_mutex, K_FOREVER);
     cur_temp   = 0;
     error_flag = false;
     setpoint   = 35;
     system_on  = false;
     max_temp   = 90;
-    PID.Kp= 3.0f;
-    PID.Ti=30.0f;
-    PID.Td=0.0f;  
+    PID.Kp     = 3.0f;
+    PID.Ti     = 30.0f;
+    PID.Td     = 0.0f;
+    k_mutex_unlock(&rtdb_mutex);
 }
 
+/* -------------------- Current temperature -------------------- */
 void rtdb_set_cur_temp(uint8_t t)
 {
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
@@ -52,6 +58,7 @@ uint8_t rtdb_get_cur_temp(void)
     return t;
 }
 
+/* -------------------- Error flag -------------------- */
 void rtdb_set_error_flag(bool err)
 {
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
@@ -68,6 +75,7 @@ bool rtdb_get_error_flag(void)
     return e;
 }
 
+/* -------------------- Setpoint -------------------- */
 void rtdb_set_setpoint(int16_t sp)
 {
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
@@ -84,6 +92,7 @@ int16_t rtdb_get_setpoint(void)
     return v;
 }
 
+/* -------------------- Max temperature -------------------- */
 void rtdb_set_maxtemp(uint8_t mt)
 {
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
@@ -91,15 +100,16 @@ void rtdb_set_maxtemp(uint8_t mt)
     k_mutex_unlock(&rtdb_mutex);
 }
 
-int16_t rtdb_get_maxtemp(void)
+uint8_t rtdb_get_maxtemp(void)
 {
-    int16_t v;
+    uint8_t v;
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
     v = max_temp;
     k_mutex_unlock(&rtdb_mutex);
     return v;
 }
 
+/* -------------------- System ON/OFF -------------------- */
 void rtdb_set_system_on(bool on)
 {
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
@@ -116,30 +126,30 @@ bool rtdb_get_system_on(void)
     return v;
 }
 
-void rtdb_set_pid(float kp,float ti,float td){
-
+/* -------------------- PID parameters -------------------- */
+void rtdb_set_pid(float kp, float ti, float td)
+{
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
-    PID.Kp= kp;
-    PID.Ti =ti;
-    PID.Td =td;
+    PID.Kp = kp;
+    PID.Ti = ti;
+    PID.Td = td;
     k_mutex_unlock(&rtdb_mutex);
 }
 
-
-rtdb_pid rtdb_get_pid(void){
+rtdb_pid rtdb_get_pid(void)
+{
     rtdb_pid v;
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
-    v.Kp = PID.Kp;
-    v.Td = PID.Td;
-    v.Ti = PID.Ti;
+    v = PID;
     k_mutex_unlock(&rtdb_mutex);
     return v;
 }
 
-
-void rtdb_print(void){
+/* -------------------- Utilities -------------------- */
+void rtdb_print(void)
+{
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
-    printk("__________________________________\n|       VARIABLE         | VALUE |\n");
+      printk("__________________________________\n|       VARIABLE         | VALUE |\n");
     printk("|   Current temperature  |%4d   |\n",cur_temp);           
     printk("|        Set Point       |%4d   |\n",setpoint);               
     printk("|     Max Temperature    | %4d  |\n",max_temp);                
@@ -148,23 +158,17 @@ void rtdb_print(void){
     printf("|            Td          |  %3.1f  |\n",PID.Td);               
     printk("|        Error Flag      |%4d   |\n",error_flag);     
     printk("|      System State      |");
-    if(system_on == true){
-        printk("  on   |\n");              
-    }else{
-        printk("  off  |\n");              
-    }
-    printk("\\________________________________/\n");
-
     k_mutex_unlock(&rtdb_mutex);
 }
 
-void rtdb_reset(void){
+void rtdb_reset(void)
+{
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
     error_flag = false;
     setpoint   = 35;
     max_temp   = 90;
-    PID.Kp= 3.0f;
-    PID.Ti=30.0f;
-    PID.Td=0.0f;  
+    PID.Kp     = 3.0f;
+    PID.Ti     = 30.0f;
+    PID.Td     = 0.0f;
     k_mutex_unlock(&rtdb_mutex);
 }

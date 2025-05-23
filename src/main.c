@@ -25,6 +25,9 @@
 #include "../modules/heater.h"
 #include "../modules/pid.h"
 #include "../modules/uart.h"
+/*Log error*/
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 /* Definições gerais */
 #define SLEEP_TIME_MS    1000    ///< Sleep Time
@@ -148,7 +151,8 @@ static struct gpio_callback button_cb_data3;
  */
 void button_pressed0(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     if(rtdb_get_system_on()== true){
-        rtdb_set_system_on(false);            
+        rtdb_set_system_on(false);     
+        heater_set_power(0);       
         printk("System turned OFF\r\n");
         /*turning the leds off*/
         gpio_pin_set_dt(&led0,0);
@@ -355,6 +359,22 @@ static void tc74_thread(void *unused1, void *unused2, void *unused3)
         if (ret == 0) {
             /* Sucesso: guarda na RTDB e imprime */
             rtdb_set_cur_temp(temp);
+           /* Proteção de maxTemp */
+        if (temp > rtdb_get_maxtemp()) {
+            rtdb_set_error_flag(true);
+            rtdb_set_system_on(false);      /* desliga o sistema */
+            printk("System turned OFF\r\n");
+            heater_set_power(0);            /* corta o PWM */
+     LOG_ERR("temperatura %d°C excede maxTemp = %d°C, heater OFF",
+            temp, rtdb_get_maxtemp());
+        }else if (!rtdb_get_system_on() && temp < (rtdb_get_maxtemp() - 5)) {
+         // se estiver desligado E já arrefeceu 5°C abaixo do limite
+        rtdb_set_error_flag(false);
+        rtdb_set_system_on(true);
+        LOG_INF("temperatura %d°C segura, sistema auto-religa", temp);
+}
+
+            
             int setp= rtdb_get_setpoint();
             printk("\rTC74-Thread: Temperatura = %d C ; Desejada = %d \n", temp,setp);
 

@@ -13,6 +13,7 @@
         "pwm.h": "c",
         "rtdb.h": "c",
         "compare": "c",
-        "xutility": "c"
+        "xutility": "c",
+        "log.h": "c"
     }
 }

@@ -1,26 +1,19 @@
 /** 
  * \file rtdb.h
- * \brief This file contains the defines and functions needed for the RTDB related functions.
+ * \brief Defines and functions for the Real-Time Database (RTDB).
  *
- * The Real-Time Database contains has the values required to run the program.
- * These values are stored so that the internal real-time tasks can be
- *  it synchronized with the I/O interfaces.
- * 
- * Values stored:
- *      <ul>
-            <li><i>Current temperature:</i> Current temperature being mesured by the heat sensor; </li>
-            <li><i>Current setpoint:</i> Temperature setpoint, default is 35ºC; </li>
-            <li><i>Max temperature</i> Max allowed temperature, if the system reaches this temperature an error will be issued, default is 100ºC </li>
-            <li><i>Error flag</i> If theres an error flag on. </li>
-            <li><i>System State</i> Tells if the system is on or off. </li>
-            <li><i>PID parameters</i> Kp, Ti, Td parameters of the PID controller. </li>
-        </ul>
- * 
- * 
+ * The RTDB stores all the runtime parameters and state of the system:
+ *  - Current temperature (curTemp)
+ *  - Desired setpoint (setPoint)
+ *  - Maximum safety temperature (maxTemp)
+ *  - Error flag (errorFlag)
+ *  - System ON/OFF state (systemOn)
+ *  - PID parameters (Kp, Ti, Td)
+ *
  * \author Simão Ribeiro
  * \author Celina Brito
  * \date 04/06/2025
- * \bug There are no known bugs.
+ * \bug No known bugs.
  */
 #ifndef RTDB_H
 #define RTDB_H
@@ -28,121 +21,125 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
+/**
+ * \brief PID parameters container.
+ */
 typedef struct {
-    float Kp;        ///< Proportional Gain
-    float Ti;        ///< Integral Term (s); if zero, integral inative */
-    float Td;        ///< Derivative Term (s); if zero, derivative inative */
+    float Kp;  ///< Proportional gain
+    float Ti;  ///< Integral time (s); if zero, integral inactive
+    float Td;  ///< Derivative time (s); if zero, derivative inactive
 } rtdb_pid;
 
 /**
  * @brief Initializes the RTDB.
  *
- * Must be called in main() before using getters/setters.
+ * Must be called in main() before using any getters or setters.
  */
 void rtdb_init(void);
 
+/* -------------------- Current temperature -------------------- */
 /**
  * @brief Updates the current temperature in the RTDB.
  *
- * @param t Value read from the TC74 sensor in °C.
+ * @param t Temperature read from the TC74 sensor (°C).
  */
-void rtdb_set_cur_temp(uint8_t t);
+void    rtdb_set_cur_temp(uint8_t t);
 
 /**
- * @brief Returns the current temperature in the RTDB.
+ * @brief Returns the current temperature from the RTDB.
  *
  * @return Current temperature (°C).
  */
 uint8_t rtdb_get_cur_temp(void);
 
+/* -------------------- Error flag -------------------- */
 /**
- * @brief Signalizes an error in the TC74.
+ * @brief Sets or clears the error flag.
  *
- * @param err True if an error occured, false to clean the flag.
+ * @param err true to signal an error, false to clear it.
  */
-void rtdb_set_error_flag(bool err);
+void    rtdb_set_error_flag(bool err);
 
 /**
- * @brief Reads the error flag.
+ * @brief Returns the current error flag.
  *
- * @return true if error, false if theres no error.
+ * @return true if an error is signaled, false otherwise.
  */
-bool rtdb_get_error_flag(void);
+bool    rtdb_get_error_flag(void);
 
-// PWM
-
+/* -------------------- Setpoint -------------------- */
 /**
  * @brief Defines the desired setpoint (°C).
- * 
- * @param sp Desired setpoint
+ *
+ * @param sp Desired temperature setpoint.
  */
 void    rtdb_set_setpoint(int16_t sp);
 
 /**
  * @brief Returns the current setpoint (°C).
- * 
- * \return Current setpoint
+ *
+ * @return Current temperature setpoint.
  */
 int16_t rtdb_get_setpoint(void);
 
+/* -------------------- Maximum safety temperature -------------------- */
 /**
- * @brief Defines the max temperature (°C).
- * 
- * \param mt max temperature.
+ * @brief Defines the maximum allowed temperature (°C).
+ *
+ * @param mt Maximum safety temperature.
  */
-void rtdb_set_maxtemp(uint8_t mt);
+void    rtdb_set_maxtemp(uint8_t mt);
 
 /**
- * @brief Returns the current max temperature (°C).
- * 
- * \return Current max temperature. 
+ * @brief Returns the current maximum safety temperature (°C).
+ *
+ * @return Maximum safety temperature.
  */
-int16_t rtdb_get_maxtemp(void);
+uint8_t rtdb_get_maxtemp(void);
+
+/* -------------------- System ON/OFF -------------------- */
+/**
+ * @brief Turns the system ON or OFF.
+ *
+ * @param on true = system ON, false = system OFF.
+ */
+void    rtdb_set_system_on(bool on);
 
 /**
- * @brief  Turns the system ON/OFF.
- * \param on on to turn on, off to turn off
- */
-void rtdb_set_system_on(bool on);
-
-/**
- * @brief Returns the system state.
- * \return on if system in on, off is system is off.
+ * @brief Returns the current system state.
+ *
+ * @return true if system is ON, false if OFF.
  */
 bool    rtdb_get_system_on(void);
 
-
+/* -------------------- PID parameters -------------------- */
 /**
- * \brief Defines the PID parameters
- * 
- * @param Kp    Proportional gain
- * @param Ti    Integral Term in seconds (>=0)
- * @param Td    Derivative Term in seconds (>=0)
+ * @brief Sets the PID parameters.
+ *
+ * @param kp Proportional gain.
+ * @param ti Integral time (s).
+ * @param td Derivative time (s).
  */
-void rtdb_set_pid(float kp,float ti,float td);
-
+void    rtdb_set_pid(float kp, float ti, float td);
 
 /**
- * \brief Returns the PID parameters
- * 
- * \return a struct with the PID parameters
+ * @brief Returns the current PID parameters.
+ *
+ * @return A struct containing Kp, Ti, Td.
  */
 rtdb_pid rtdb_get_pid(void);
 
+/* -------------------- Utilities -------------------- */
 /**
- * \brief Prints the RTDB table on the terminal
+ * @brief Prints the entire RTDB contents to the console.
  */
-void rtdb_print(void);
+void    rtdb_print(void);
 
 /**
- * \brief Resets the adjustable parameters
- * 
- * The Parameters setpointm, max temperature, PID and the error flag are all 
- * set to their default state
- */  
-void rtdb_reset(void);
+ * @brief Resets adjustable parameters to their default values.
+ *
+ * This resets setpoint, maxTemp, PID parameters, and error flag.
+ */
+void    rtdb_reset(void);
 
 #endif /* RTDB_H */
-
-
-
