@@ -1,6 +1,7 @@
 #include "unity.h"
 #include <stdio.h>
 #include "pid_tests.h"
+#include "heater_tests.h"
 // protótipos dos testes
 extern void test_num2char(void);
 extern void test_char2num(void);
@@ -61,9 +62,14 @@ int main(void) {
     RUN_TEST(test_negative_dt_behaviour);
 
 
+    printf("\nTestes para HEATER\n");
+    printf("\n");
 
-
-
+    RUN_TEST(test_init_returns_zero_when_device_ready);
+    RUN_TEST(test_init_fails_when_device_not_ready);
+    RUN_TEST(test_set_power_saturates_and_calls_pwm);
+    RUN_TEST(test_set_power_50_percent);
+    RUN_TEST(test_set_power_zero);
 
 
 

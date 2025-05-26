@@ -3,14 +3,6 @@
 
 
 
-// _Isto_ é EXACTLY o que o Unity procura:
-void setUp(void) {
-    // opcionalmente coloca aqui código de preparação comum
-}
-
-void tearDown(void) {
-    // opcionalmente limpa recursos depois de cada teste
-}
 
 
 void test_num2char(void){

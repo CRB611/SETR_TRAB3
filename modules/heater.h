@@ -13,7 +13,15 @@
 #ifndef HEATER_H
 #define HEATER_H
 
-// #include <zephyr/types.h>
+
+/* O nó pwm0 deve estar ativo no overlay */
+#define HEATER_PWM_NODE     DT_NODELABEL(pwm0)
+#define HEATER_PWM_CHANNEL  0U
+
+/* 1 kHz → 1 ms = 1 000 000 ns */
+#define HEATER_PWM_PERIOD_NS 1000000U
+
+#include <zephyr/types.h>
 
 /**
  * @brief Initializes the heater driver (PWM).

@@ -14,6 +14,8 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pwm.h>
 #include "heater.h"
+#include <errno.h>
+
 
 /* O nó pwm0 deve estar ativo no overlay */
 #define HEATER_PWM_NODE     DT_NODELABEL(pwm0)
