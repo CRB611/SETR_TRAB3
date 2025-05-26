@@ -20,7 +20,7 @@
 
  // #include <zephyr/types.h>
 #include <stdbool.h>
-
+#include <stdint.h>
 /**
  * \brief PID parameters container.
  */
