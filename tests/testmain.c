@@ -1,5 +1,6 @@
 #include "unity.h"
 #include <stdio.h>
+#include "pid_tests.h"
 // protótipos dos testes
 extern void test_num2char(void);
 extern void test_char2num(void);
@@ -47,6 +48,25 @@ int main(void) {
     RUN_TEST(test_set_get_setpoint);
     RUN_TEST(test_max_temp_boundaries);
     RUN_TEST(test_full_reset);
+    printf("\nTestes para PID\n");
+    printf("\n");
+    RUN_TEST(test_default_pid_params);
+    RUN_TEST(test_proportional_action);
+    RUN_TEST(test_integral_action);
+    RUN_TEST(test_derivative_action);
+   /* RUN_TEST(test_integral_reset);*/
+    RUN_TEST(test_zero_dt_behaviour);
+    RUN_TEST(test_cascading_pid_steps);
+    RUN_TEST(test_derivative_initial_zero);
+    RUN_TEST(test_negative_dt_behaviour);
+
+
+
+
+
+
+
+
 
     return UNITY_END();
 }

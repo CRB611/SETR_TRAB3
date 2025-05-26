@@ -20,9 +20,15 @@ void pid_init(pid_data_t *pid, float Kp, float Ti, float Td)
 
 float pid_compute(pid_data_t *pid, int16_t setp, float meas, float dt_s)
 {
-    if (dt_s <= 0.0f) {
-        return 0.0f;
-    }
+if (dt_s <= 0.0f) {
+    float error = (float)setp - meas;
+    float output = pid->Kp * error;
+    // saturar entre 0 e 100
+    if (output > 100.0f) output = 100.0f;
+    else if (output < 0.0f) output = 0.0f;
+    return output;
+}
+
 
     float error = (float)setp - meas;
 
