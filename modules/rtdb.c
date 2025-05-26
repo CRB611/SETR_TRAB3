@@ -8,6 +8,7 @@
  * \bug Não existem bugs conhecidos.
  */
 #include "rtdb.h"
+#include <stdint.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 

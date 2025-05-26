@@ -11,8 +11,11 @@
 #include <string.h>
 #include <math.h> 
 #include "uart.h"
-
-#include <zephyr/drivers/uart.h>
+#ifdef UNIT_TEST
+/* stub vazio para host */
+#else
+#  include <zephyr/drivers/uart.h>
+#endif
 
 int calcChecksum(unsigned char * buf, int nbytes) {
 	unsigned int sum = 0 ;

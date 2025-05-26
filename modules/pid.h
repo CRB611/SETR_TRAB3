@@ -11,8 +11,12 @@
  */
 #ifndef PID_H
 #define PID_H
-
+#ifdef UNIT_TEST
+/* stub vazio para host */
+#else
 #include <zephyr/types.h>
+#endif
+// #include <zephyr/types.h>
 
 /**
  * @brief PID controller data structure.

@@ -13,7 +13,7 @@
 #ifndef HEATER_H
 #define HEATER_H
 
-#include <zephyr/types.h>
+// #include <zephyr/types.h>
 
 /**
  * @brief Initializes the heater driver (PWM).

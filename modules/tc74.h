@@ -9,7 +9,7 @@
 #ifndef TC74_H
 #define TC74_H
 
-#include <zephyr/drivers/i2c.h>
+// #include <zephyr/drivers/i2c.h>
 
 /**
  * @def TC74_CMD_RTR
