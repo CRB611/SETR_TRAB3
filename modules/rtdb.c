@@ -167,11 +167,13 @@ void rtdb_print(void)
 void rtdb_reset(void)
 {
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
+    cur_temp   = 0;
     error_flag = false;
     setpoint   = 35;
     max_temp   = 90;
     PID.Kp     = 3.0f;
     PID.Ti     = 30.0f;
     PID.Td     = 0.0f;
+    system_on  = false;
     k_mutex_unlock(&rtdb_mutex);
 }
