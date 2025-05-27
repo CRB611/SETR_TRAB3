@@ -35,6 +35,7 @@ int main(void) {
     RUN_TEST(test_char2float);
     RUN_TEST(test_checksum);
 
+
     printf("\nTestes para RTDB\n");
     printf("\n");
     RUN_TEST(test_default_values_without_init);

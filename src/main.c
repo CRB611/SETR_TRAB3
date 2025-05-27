@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 /* Definições gerais */
 #define SLEEP_TIME_MS    1000    ///< Sleep Time
-#define MAX_TEMP 200             ///< Absolute maximum temperature
+#define MAX_TEMP 120             ///< Absolute maximum temperature
 #define OK 0                    ///< Return if everything is alright
 
 static bool table_flag=false;
@@ -365,13 +365,13 @@ static void tc74_thread(void *unused1, void *unused2, void *unused3)
             rtdb_set_system_on(false);      /* desliga o sistema */
             printk("System turned OFF\r\n");
             heater_set_power(0);            /* corta o PWM */
-     LOG_ERR("temperatura %d°C excede maxTemp = %d°C, heater OFF",
+        LOG_ERR("temperatura %d°C excede maxTemp = %d°C, heater OFF",
             temp, rtdb_get_maxtemp());
-        }else if (!rtdb_get_system_on() && temp < (rtdb_get_maxtemp() - 5)) {
+        }else if (!rtdb_get_system_on() && temp < (rtdb_get_maxtemp() - 4)) {
          // se estiver desligado E já arrefeceu 5°C abaixo do limite
         rtdb_set_error_flag(false);
         rtdb_set_system_on(true);
-        LOG_INF("temperatura %d°C segura, sistema auto-religa", temp);
+        LOG_WRN("temperatura %d°C segura, sistema auto-religa", temp);
 }
 
             
@@ -630,7 +630,19 @@ int uart_process(){
                 rtdb_reset();
     			printk(" The adjustable parameters were reset.\n");
                 return OK;
-            }    
+            }  
+            
+            case 'D':
+            {
+                /*getting the temperature to be set*/
+				int  set_set= char2num(&rx_msg[i+2], 3);
+				
+				rtdb_set_setpoint((uint16_t)set_set);
+			
+				printk(" The setpoint was set to: %d.\r\n",set_set);
+				
+				return OK;
+            } 
 
 			default:
 			{

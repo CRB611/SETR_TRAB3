@@ -18,7 +18,7 @@
 #ifndef RTDB_H
 #define RTDB_H
 
- // #include <zephyr/types.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 #include <stdint.h>
 /**

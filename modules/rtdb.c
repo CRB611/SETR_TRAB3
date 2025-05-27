@@ -9,7 +9,11 @@
  */
 #include "rtdb.h"
 #include <stdint.h>
+#include <stdio.h>
+#include <math.h>
 #include <zephyr/kernel.h>
+
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/printk.h>
 
 /* Mutex que protege todas as variáveis da RTDB */
@@ -152,15 +156,33 @@ rtdb_pid rtdb_get_pid(void)
 void rtdb_print(void)
 {
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
-      printk("__________________________________\n|       VARIABLE         | VALUE |\n");
+    
+    /*converter os floats para ints para poder dar print*/
+    int Kp_int= floor(PID.Kp);
+    int Kp_dec= (PID.Kp-Kp_int) *10;
+
+    int Ti_int= floor(PID.Ti);
+    int Ti_dec= (PID.Ti-Ti_int) *10;
+
+     int Td_int= floor(PID.Td);
+    int Td_dec= (PID.Td-Td_int) *10;
+
+
+    printk("__________________________________\n|       VARIABLE         | VALUE |\n");
     printk("|   Current temperature  |%4d   |\n",cur_temp);           
     printk("|        Set Point       |%4d   |\n",setpoint);               
     printk("|     Max Temperature    | %4d  |\n",max_temp);                
-    printf("|            Kp          |  %3.1f  |\n",PID.Kp);               
-    printf("|            Ti          |  %3.1f |\n",PID.Ti);               
-    printf("|            Td          |  %3.1f  |\n",PID.Td);               
+    printk("|            Kp          |  %d.%d  |\n",Kp_int,Kp_dec);               
+    printk("|            Ti          |  %d.%d |\n",Ti_int,Ti_dec);               
+    printk("|            Td          |  %d.%d  |\n",Td_int,Td_dec);              
     printk("|        Error Flag      |%4d   |\n",error_flag);     
     printk("|      System State      |");
+    if(system_on == true){
+        printk("   on  |\n");              
+    }else{
+        printk("  off  |\n");        
+    }
+    printk("\\________________________________/\n");
     k_mutex_unlock(&rtdb_mutex);
 }
 

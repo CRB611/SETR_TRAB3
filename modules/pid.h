@@ -14,7 +14,7 @@
 
 #include <zephyr/types.h>
 
-// #include <zephyr/types.h>
+#include <zephyr/types.h>
 
 /**
  * @brief PID controller data structure.
