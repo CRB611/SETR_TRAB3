@@ -29,6 +29,7 @@ static const struct device *heater_pwm_dev = DEVICE_DT_GET(HEATER_PWM_NODE);
 
 int heater_init(void)
 {
+    heater_set_power(0);
     if (!device_is_ready(heater_pwm_dev)) {
         printk("Erro: PWM device '%s' não está pronto\n",
                heater_pwm_dev->name);

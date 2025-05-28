@@ -54,4 +54,8 @@ unsigned int char2num(unsigned char ascii [], int length);
 float char2float(unsigned char ascii []);
 
 
+
+int process_uart_command(const char *cmd, char *reply);
+
+
 #endif

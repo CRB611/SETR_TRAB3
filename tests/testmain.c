@@ -2,11 +2,9 @@
 #include <stdio.h>
 #include "pid_tests.h"
 #include "heater_tests.h"
+#include "uart_tests.h"
 // protótipos dos testes
-extern void test_num2char(void);
-extern void test_char2num(void);
-extern void test_char2float(void);
-extern void test_checksum(void);
+
 extern void test_commands(void);
 extern void test_command_errors(void);
 
@@ -33,8 +31,12 @@ int main(void) {
     RUN_TEST(test_num2char);
     RUN_TEST(test_char2num);
     RUN_TEST(test_char2float);
-    RUN_TEST(test_checksum);
-
+    RUN_TEST(test_calcChecksum);
+    RUN_TEST(test_process_set_max_temp_ok);
+    RUN_TEST(test_process_set_max_temp_too_hot);
+    RUN_TEST(test_process_get_current_temp);
+    RUN_TEST(test_process_invalid_checksum);
+    RUN_TEST(test_process_invalid_command);
 
     printf("\nTestes para RTDB\n");
     printf("\n");
