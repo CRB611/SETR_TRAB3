@@ -70,6 +70,9 @@ void test_process_set_max_temp_ok(void) {
     TEST_ASSERT_EQUAL_CHAR('o', reply[2]);
     int chk = char2num((unsigned char*)&reply[3], 3);
     TEST_ASSERT_EQUAL_INT(calcChecksum((unsigned char*)"Eo", 2), chk);
+
+    ret=rtdb_get_maxtemp();
+    TEST_ASSERT_EQUAL_INT(50, ret);
 }
 
 void test_process_set_max_temp_too_hot(void) {
@@ -110,4 +113,39 @@ void test_process_invalid_command(void) {
     TEST_ASSERT_EQUAL_STRING("#Ei174!", reply);
 }
 
+void run_uart_tests(void){
+    char reply[16];
+    /*S Command*/
+
+    // Comando #S10.203.400.5156!: checksum = 156
+    int ret = process_uart_command("#S10.203.400.5156!", reply);
+    TEST_ASSERT_EQUAL_INT(OK, ret);
+    TEST_ASSERT_EQUAL_STRING("#Eo180!", reply);
+
+    rtdb_pid help=rtdb_get_pid();
+    TEST_ASSERT_EQUAL_FLOAT(10.2f,help.Kp);
+    TEST_ASSERT_EQUAL_FLOAT(3.4f,help.Ti);
+    TEST_ASSERT_EQUAL_FLOAT(0.5f,help.Td);
+
+    // Comando #D060218! : checksum = 218
+    ret = process_uart_command("#D060218!", reply);
+    TEST_ASSERT_EQUAL_INT(OK, ret);
+    TEST_ASSERT_EQUAL_STRING("#Eo180!", reply);
+    
+    ret=rtdb_get_setpoint();
+    TEST_ASSERT_EQUAL_INT(60, ret);
+
+    // Comando #R082! : checksum = 082
+    ret = process_uart_command("#R082!", reply);
+    TEST_ASSERT_EQUAL_INT(OK, ret);
+    TEST_ASSERT_EQUAL_STRING("#Eo180!", reply);
+
+    help=rtdb_get_pid();
+    TEST_ASSERT_EQUAL_FLOAT(3.0f,help.Kp);
+    TEST_ASSERT_EQUAL_FLOAT(30.0f,help.Ti);
+    TEST_ASSERT_EQUAL_FLOAT(0.0f,help.Td);
+
+    ret=rtdb_get_setpoint();
+    TEST_ASSERT_EQUAL_INT(35, ret);
+}
 

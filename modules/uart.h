@@ -13,6 +13,7 @@
 
 #define SOF_SYM '#'	        ///< Start of Frame Symbol
 #define EOF_SYM '!'         ///< End of Frame Symbol 
+#define OK               0       ///< Return if everything is alright
 #define EOF_ERROR -1        ///< Return if there's and End-of-File Error
 #define SOF_ERROR -2        ///< Return if there's and Start-of-File Error
 #define CHECKSUM_ERROR -3   ///< Return if the checksum is wrong

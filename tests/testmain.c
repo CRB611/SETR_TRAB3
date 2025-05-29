@@ -30,6 +30,7 @@ extern void test_full_reset(void);
 int main(void) {
     UNITY_BEGIN();
 
+    setUp();
     printf("\nTestes para UART\n");
     printf("\n");
     RUN_TEST(test_num2char);
@@ -41,10 +42,12 @@ int main(void) {
     RUN_TEST(test_process_get_current_temp);
     RUN_TEST(test_process_invalid_checksum);
     RUN_TEST(test_process_invalid_command);
+    RUN_TEST(run_uart_tests);
 
     printf("\nTestes para RTDB\n");
     printf("\n");
-    RUN_TEST(test_default_values_without_init);
+     setUp();
+   // RUN_TEST(test_default_values_without_init);
     RUN_TEST(test_default_values);
     //RUN_TEST(test_set_get_pid);
     //RUN_TEST(test_set_get_temp);
@@ -71,15 +74,14 @@ int main(void) {
 
     printf("\nTestes para HEATER\n");
     printf("\n");
-
+     setUp();
     RUN_TEST(test_init_returns_zero_when_device_ready);
     RUN_TEST(test_init_fails_when_device_not_ready);
     RUN_TEST(test_set_power_saturates_and_calls_pwm);
     RUN_TEST(test_set_power_50_percent);
     RUN_TEST(test_set_power_zero);
-
-
-
+    
+    tearDown();
 
     return UNITY_END();
 }

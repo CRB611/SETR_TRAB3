@@ -63,7 +63,7 @@ float char2float(unsigned char ascii[]) {
 int process_uart_command(const char *cmd, char *reply) {
     size_t len = strlen(cmd);
     // Verificação de framing
-	    
+
     if (len == 0 || cmd[0] != '#') {
         int cs = calcChecksum((unsigned char *)"Ef", 2);
         sprintf(reply, "#Ef%03d!", cs);
