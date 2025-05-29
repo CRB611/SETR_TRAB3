@@ -39,6 +39,8 @@ An user interface is also given through the Board LEDs and Buttons, as well as f
  <b>System Architecture Diagram:</b><br>
    <img src="https://github.com/CRB611/SETR_TRAB3/blob/main/Sys_Architechture_Diag.png?raw=true" alt="System Architecture" style="width: 800px;"/>
 
+
+
 <b>User interface:</b><br>
 The user interface can be done through LEDS, Buttons or through UART Communication.
 <i>LEDs and Buttons:</i>
@@ -54,7 +56,7 @@ The user interface can be done through LEDS, Buttons or through UART Communicati
     <li><b>Button4:</b> Decreases the desired temperature 1ºC. </li>
 </ul>
 
-This communication made in ASCII follow the following format: #CMD DATA CHK! (without the spaces)
+This communication made in ASCII follow the following format: <b>#CMD DATA CHK!</b> (without the spaces)
 <ul>
     <li><b>'#':</b> A char representing the start of the frame; </li>
     <li><b>'!':</b> A char representing the end of the frame; </li>
@@ -66,12 +68,14 @@ This communication made in ASCII follow the following format: #CMD DATA CHK! (wi
 The existing commands are:
 <ul>
     <li><b>'M':</b> Sets the maximum temperature to the one sent in the data portion; </li>
-    <li><b>'C':</b> Returns de current temperature; </li>
+    <li><b>'D':</b> Sets the desired temperature to the one sent in the data portion; </li>
     <li><b>'S':</b> Sets the PID controller parameters to the ones sent in the data portion; </li>
+    <li><b>'C':</b> Returns the current temperature; </li>
+    <li><b>'G':</b> Returns the max temperature; </li>
     <li><b>'R':</b> Resets the adjustable RTDB parameters (max temperature, desired temperature, PID parameters); </li>
 </ul>
 
------VOU AQUI----
+
 
 
 <b>File Structure:</b><br>
@@ -93,34 +97,33 @@ The existing commands are:
             <li><i>tc74.h:</i> Header file containing the functions, structures and macros needed for the TC74 implementation. </li>
             <li><i>uart.c:</i> Source file containing the UART helping functions. </li>
             <li><i>uart.h:</i> Header file containing the functions, structures and macros needed for the UART implementation. </li>
+        
         </ul>
     </li>
-    <li><b><u>tests</u></b> Folder where the test files are:
+    <li><b><u>tests</u></b> Folder where the test files to use with UNITY are:
         <ul>
-            <li><i>test.c:</i> Source file containing the implementation of the tests using UNITY; </li>
-            <li><i>test.h:</i> Header file containing the functions, structures and macros needed for the UNITY tests; </li>
+            <li><i>testmain.c:</i> Main file where the tests are run; </li>
+            <li><i>heater_tests.c:</i> Source file where the tests to the heater module are implemented; </li>
+            <li><i>heater_tests.h:</i> Header file containing the functions to test the heater module ; </li>
+            <li><i>pid_tests.c:</i> Source file where the tests to the PID module are implemented; </li>
+            <li><i>pid_tests.h:</i> Header file containing the functions to test the PID module ; </li>
+            <li><i>rtdb_tests.c:</i> Source file where the tests to the rtdb module are implemented; </li>
+            <li><i>rtdb_tests.h:</i> Header file containing the functions to test the rtdb module ; </li>
+            <li><i>uart_tests.c:</i> Source file where the tests to the UART module are implemented; </li>
+            <li><i>uart_tests.h:</i> Header file containing the functions to test the UART module ; </li>
+           
         </ul>
     </li>
      <li><b><u>build</u></b> Folder where the object files are generated to.</li>
      <li><b><u>unity</u></b> Folder where the files required to use UNITY are stored.</li>
+     <li><b><u>stubs</u></b> Folder where the files the stubs required to emulate the board are stored .</li>
+    
      <li><i>CMakeLists.txt:</i> The file that allows us to run the code.</li>
+     <li><i>Makefile:</i> The file that allows us to run the tests.</li>
      <li><i>prj.conf:</i> Zephyr configuration file.</li>
      <li><i>nrf52840dk_nrf52840.overlay:</i> Overlay file required to make some changes in the nrf52840dk_nrf52840 board.</li>
 </ul>
 
-
-<b>Usage:</b><br>
-To use this module run the make command on the main folder, this will generate the .o files in the build directory and the main executable on the base directory.
-After the main executable is generated run ./main to execute.
-
-<b>Test scenarios covered:</b><br>
-<ul>
-    <li><i>Initialization:</i> Initialization of the module.</li>
-    <li><i>Command processing:</i> Each command is tested, including occurences where a wrong command or data is sent</li>
-    <li><i>Checksum:</i> The checksum is tested.</li>
-    <li><i>Convertion:</i> The ASCII to int and int to ASCII conversions are also tested.</li>
-    <li><i>Buffers:</i> Buffer processes like adding elements and geting data are tested.</li>
-</ul>
 
 @author Celina Brito
 @author Simão Ribeiro

@@ -1,8 +1,9 @@
 /** 
  * \file main.c
- * \brief This file contains the structures and functions needed for the code as well as the main program.
+ * \brief This file contains code as well as the main program function and the threads necessary for the system.
  *
- *        blablabla
+ *  In this file the nrf board drivers are initialized and programed, and the threads are set to ensue a good 
+ * Real-time system.
  *
  * \author Simão Ribeiro
  * \author Celina Brito
@@ -57,37 +58,56 @@ const struct uart_config uart_cfg = {
     .stop_bits = UART_CFG_STOP_BITS_1,
     .data_bits = UART_CFG_DATA_BITS_8,
     .flow_ctrl = UART_CFG_FLOW_CTRL_NONE
-};
+};          ///< UART configuration struct
 
+/** 
+ * \brief function that defines the Uart Mutex
+ * \param uart_mutex name for the mutex
+ */ 
 K_MUTEX_DEFINE(uart_mutex);
+/**
+ * \brief function that defines the Uart K_thread Stack
+ * \param uart_stack name for the stack
+ * \param UART_THREAD_STACK_SIZE size of the stack
+ */ 
 K_THREAD_STACK_DEFINE(uart_stack, UART_THREAD_STACK_SIZE);
 static struct k_thread uart_thread_data;
 static void uart_thread(void *arg1, void *arg2, void *arg3);
 static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data);
 
 /* Threads for TC74 and PID control */
+/**
+ * \brief function that defines the tc74 K_thread Stack
+ * \param tc74_stack name for the stack
+ * \param TC74_THREAD_STACK_SIZE size of the stack
+ */ 
 K_THREAD_STACK_DEFINE(tc74_stack, 512);
 static struct k_thread tc74_thread_data;
 static void tc74_thread(void *arg1, void *arg2, void *arg3);
 
+/**
+ * \brief function that defines the PID control K_thread Stack
+ * \param control_stack name for the stack
+ * \param CONTROL_STACK_SZ size of the stack
+ */ 
 K_THREAD_STACK_DEFINE(control_stack, 512);
 static struct k_thread control_data;
 static void control_thread(void *arg1, void *arg2, void *arg3);
 
 /* Button and LED setup */
-#define SW0_NODE DT_ALIAS(sw0)
-#define SW1_NODE DT_ALIAS(sw1)
-#define SW2_NODE DT_ALIAS(sw2)
-#define SW3_NODE DT_ALIAS(sw3)
+#define SW0_NODE DT_ALIAS(sw0)                     ///< Node ID for BUTTON 1        
+#define SW1_NODE DT_ALIAS(sw1)                     ///< Node ID for BUTTON 2    
+#define SW2_NODE DT_ALIAS(sw2)                     ///< Node ID for BUTTON 3    
+#define SW3_NODE DT_ALIAS(sw3)                     ///< Node ID for BUTTON 4    
 static const struct gpio_dt_spec button0 = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 static const struct gpio_dt_spec button1 = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 static const struct gpio_dt_spec button2 = GPIO_DT_SPEC_GET(SW2_NODE, gpios);
 static const struct gpio_dt_spec button3 = GPIO_DT_SPEC_GET(SW3_NODE, gpios);
 
-#define LED0_NODE DT_ALIAS(led0)
-#define LED1_NODE DT_ALIAS(led1)
-#define LED2_NODE DT_ALIAS(led2)
-#define LED3_NODE DT_ALIAS(led3)
+#define LED0_NODE DT_ALIAS(led0)                     ///< Node ID for LED 1   
+#define LED1_NODE DT_ALIAS(led1)                     ///< Node ID for LED 2   
+#define LED2_NODE DT_ALIAS(led2)                     ///< Node ID for LED 3   
+#define LED3_NODE DT_ALIAS(led3)                     ///< Node ID for LED 4   
 static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 static const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 static const struct gpio_dt_spec led2 = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
@@ -286,6 +306,10 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
     }
 }
 
+
+/**
+ * \brief function where the Uart commands are processed
+ */
 int uart_process(void)
 {
     /* Build frame */

@@ -1,10 +1,11 @@
 /**
  * @file uart_tests.h
- * @brief Declarações dos testes Unity para o módulo UART.
+ * @brief Declaration of the unit tests for the UART module.
  *
- * Este ficheiro contém as assinaturas das funções de teste que verificam:
- *   - Utilitários: num2char, char2num, char2float, calcChecksum
- *   - Processamento de comandos UART: process_uart_command
+ * This file contains the declarations of the test functions that validate the UART module
+ * behaviour.
+ * It uses UNITY framework to test the utilities functions (num2char, char2num, char2float, calcChecksum),
+ * and the processing of commands.
  *
  * @authors Simão Ribeiro
  * @date 04/06/2025
@@ -20,54 +21,55 @@ extern "C" {
 #endif
 
 /**
- * @brief Testa a conversão de inteiro para array ASCII de três dígitos.
+ * @brief Tests the convertion from integer to 3 digit ASCII.
  */
 void test_num2char(void);
 
 /**
- * @brief Testa a conversão de ASCII de três dígitos para inteiro.
+ * @brief Tests the convertion from to 3 digit ASCII to integer.
  */
 void test_char2num(void);
 
 /**
- * @brief Testa a conversão de string ASCII 'pp.f' para float.
+ * @brief Tests the convertion from string ASCII 'pp.f' to float.
  */
 void test_char2float(void);
 
 /**
- * @brief Testa o cálculo de checksum modulo-256.
+ * @brief tests the modulo-256 checksum computation.
  */
 void test_calcChecksum(void);
 
 /**
- * @brief Testa o processamento de comando '#MxxxYYY!' com valor dentro do limite.
+ * @brief Tests the processing of the '#MxxxYYY!' command with a value within boundaries.
  */
 void test_process_set_max_temp_ok(void);
 
 /**
- * @brief Testa o processamento de comando '#MxxxYYY!' com valor superior ao limite.
+ * @brief Tests the processing of the '#MxxxYYY!' command with a value out of bounds.
  */
 void test_process_set_max_temp_too_hot(void);
 
 /**
- * @brief Testa o processamento de comando '#Cyyy!' para obter a temperatura atual.
+ * @brief Tests the processing of the '#Cyyy!' command.
  */
 void test_process_get_current_temp(void);
 
 /**
- * @brief Testa o caso de checksum inválido no comando UART.
+ * @brief Tests an invalid checksum.
  */
 void test_process_invalid_checksum(void);
 
 /**
- * @brief Testa o caso de comando desconhecido no frame UART.
+ * @brief Tests an unknown.
  */
 void test_process_invalid_command(void);
 
 /**
- * @brief Executa todos os testes de UART.
+ * @brief Executes a success of the Uart commands.
  */
 void run_uart_tests(void);
+
 
 #ifdef __cplusplus
 }

@@ -6,7 +6,6 @@
 /* Limpar estado antes de cada teste */
  void setUp(void) {
 
-    
     last_pwm_dev    = NULL;
     last_pwm_chan   = (uint32_t)-1;
     last_pwm_period = (uint32_t)-1;
@@ -16,6 +15,7 @@
    
     fake_dev_ready = true;
  }
+
 void tearDown(void){}
 
 

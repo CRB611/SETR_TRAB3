@@ -22,14 +22,14 @@
 
 
 /**
-  * \brief Computes the checksum of a given number of chars.
+  * \brief Computes the checksum  modulo-256 of a given number of chars.
   * \param buf pointer to the buffer
   * \param nbytes number of bytes to check
   */
 int calcChecksum(unsigned char * buf, int nbytes); 
 
  /**
-  * \brief Converts an integer to a ASCII
+  * \brief Converts an integer to a 3 digit ASCII
   * \param array pointer to where the converted chars will be stored
   * \param num the integer to be converted
   * \param type 't' for temperature, 'h' for humidity, 'c' for c02 or checksum
@@ -47,14 +47,22 @@ unsigned int char2num(unsigned char ascii [], int length);
 /**
   * \brief Converts ASCII to float
   * 
-  *   The ASCII parameter has to be in xx.x format
+  *   The ASCII parameter has to be in pp.f format
   * \param ascii pointer to where the converted chars are stored
   * \return Returns the float corresponding to the character array
   */
 float char2float(unsigned char ascii []);
 
 
-
+/**
+ * \brief Processes the uart commands
+ * 
+ *   Processes the UART commands by validating the framing and the checksum and
+ *  afterwards, computing the received command  
+ *  \param cmd Uart receive buffer, where the command is
+ *  \param reply Uart transmition buffer, where the responces will be sent 
+ *  \return OK if success, Error message in error case.
+ */
 int process_uart_command(const char *cmd, char *reply);
 
 

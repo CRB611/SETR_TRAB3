@@ -26,9 +26,7 @@
 
 #define MAX_TEMP 120
 
-/**
- * \brief Calcula checksum modulo-256
- */
+
 int calcChecksum(unsigned char *buf, int nbytes) {
     unsigned int sum = 0;
     for (int i = 0; i < nbytes; i++) {
@@ -37,9 +35,7 @@ int calcChecksum(unsigned char *buf, int nbytes) {
     return sum % 256;
 }
 
-/**
- * \brief Converte número para ASCII de três dígitos
- */
+
 void num2char(unsigned char *array, int num) {
     for (int i = 2; i >= 0; i--) {
         array[i] = (num % 10) + '0';
@@ -47,9 +43,7 @@ void num2char(unsigned char *array, int num) {
     }
 }
 
-/**
- * \brief Converte ASCII de dígitos para inteiro
- */
+
 unsigned int char2num(unsigned char ascii[], int length) {
     unsigned int value = 0;
     for (int i = 0; i < length; i++) {
@@ -58,18 +52,14 @@ unsigned int char2num(unsigned char ascii[], int length) {
     return value;
 }
 
-/**
- * \brief Converte ASCII "pp.ff" para float (2 dígitos inteiros, 1 decimal)
- */
+
 float char2float(unsigned char ascii[]) {
     int intpart = (ascii[0] - '0') * 10 + (ascii[1] - '0');
     int frac = (ascii[3] - '0');
     return intpart + frac / 10.0f;
 }
 
-/**
- * \brief Processa frame UART, valida framing, checksum e executa comando.
- */
+
 int process_uart_command(const char *cmd, char *reply) {
     size_t len = strlen(cmd);
     // Verificação de framing

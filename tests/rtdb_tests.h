@@ -1,13 +1,12 @@
 /**
- * @file test_rtdb.h
- * @brief Declaração de testes unitários para o módulo RTDB (Real-Time Database).
+ * @file rtdb_tests.h
+ * @brief Declaration of the unit tests for the RTDB (Real-Time Database) module.
  * 
- * Este ficheiro contém as declarações das funções de teste que validam 
- * o comportamento do módulo `rtdb`. Utiliza o framework Unity para testar
- * valores por omissão, definição e recuperação de parâmetros como PID,
- * temperatura, flags de erro, estado do sistema e setpoint.
+ * This file contains the declarations of the test functions that validate the RTDB module
+ * behaviour.
+ * It uses UNITY framework to test default values, and returning an setting parameters like
+ * the PID, temperatures (max, current and desired), error flags, and setpoint.
  */
-
 #ifndef TEST_RTDB_H
 #define TEST_RTDB_H
 
@@ -17,52 +16,52 @@
 
 
 /** 
- * @brief Testa os valores por omissão sem inicialização explícita.
+ * @brief Test the values without init.
  */
 void test_default_values_without_init(void);
 
 /** 
- * @brief Testa os valores por omissão após chamada a rtdb_init().
+ * @brief Test the values after init.
  */
 void test_default_values(void);
 
 /** 
- * @brief Testa se a flag de erro está desativada por omissão.
+ * @brief Tests the default error flag.
  */
 void test_default_error_flag(void);
 
 /** 
- * @brief Testa a ativação e desativação da flag de erro.
+ * @brief Tests the error flag activation and deactivation.
  */
 void test_set_get_error_flag(void);
 
 /** 
- * @brief Testa se o sistema está desligado por omissão.
+ * @brief Tests the default system state.
  */
 void test_default_system_off(void);
 
 /** 
- * @brief Testa a ativação e desativação do sistema.
+ * @brief Tests the system state change.
  */
 void test_set_get_system_on(void);
 
 /** 
- * @brief Testa o setpoint por omissão.
+ * @brief Tests the default setpoint.
  */
 void test_default_setpoint(void);
 
 /** 
- * @brief Testa a definição e leitura do setpoint.
+ * @brief Tests the setting and returning of the setpoint.
  */
 void test_set_get_setpoint(void);
 
 /** 
- * @brief Testa os limites mínimo e máximo de temperatura máxima permitida.
+ * @brief Tests the max temperature upper and lower boundaries.
  */
 void test_max_temp_boundaries(void);
 
 /** 
- * @brief Testa se o reset completo do sistema repõe todos os valores por omissão.
+ * @brief Tests the system reset.
  */
 void test_full_reset(void);
 

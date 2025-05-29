@@ -1,12 +1,16 @@
+/**
+ * @file testmain.c
+ * @brief Main file where the UNITY tests are executed
+ *
+ */
+
 #include "unity.h"
 #include <stdio.h>
 #include "pid_tests.h"
 #include "heater_tests.h"
 #include "uart_tests.h"
-// protótipos dos testes
 
-extern void test_commands(void);
-extern void test_command_errors(void);
+// protótipos dos testes
 
 extern void test_default_values(void);
 extern void test_set_get_pid(void);

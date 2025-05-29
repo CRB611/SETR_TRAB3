@@ -15,6 +15,7 @@
         "compare": "c",
         "xutility": "c",
         "log.h": "c",
-        "tc74.h": "c"
+        "tc74.h": "c",
+        "pid.h": "c"
     }
 }

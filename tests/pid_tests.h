@@ -1,11 +1,11 @@
 /**
  * @file pid_tests.h
- * @brief Declaração de testes unitários para o módulo de controlo PID.
+ * @brief Declaration of the unit tests for the PID controller module.
  * 
- * Este ficheiro define os protótipos das funções de teste para o módulo PID.
- * Os testes verificam a correta implementação das ações proporcional, integral e derivativa,
- * bem como o tratamento de casos particulares como tempos nulos ou negativos, 
- * e a sequência de chamadas a funções do PID.
+ * This file defines the prototypes of the test functions to the PID controller module.
+ * These tests verify the correct implementation of the proportional, integral and derivative 
+ * actions, as well as checking particular cases like null or negative terms, and the PID 
+ * function calls sequence.
  */
 
 #ifndef PID_TESTS_H
@@ -16,52 +16,55 @@
 
 
 /** 
- * @brief Testa os valores por omissão dos parâmetros PID após inicialização.
+ * @brief Tests the default pid parameters.
  */
 void test_default_pid_params(void);
 
 /**
- * @brief Testa a contribuição da componente proporcional para a saída do PID.
+ * @brief Tests the contribution of the proportional component for the PID output.
  */
 void test_proportional_action(void);
 
 /**
- * @brief Testa a contribuição da componente integral para a saída do PID.
+ * @brief Tests the contribution of the integral component for the PID output.
  */
 void test_integral_action(void);
 
 /**
- * @brief Testa a contribuição da componente derivativa para a saída do PID.
+ * @brief Tests the contribution of the derivative component for the PID output.
+ 
  */
 void test_derivative_action(void);
 
 /**
- * @brief Testa o reset da componente integral e a ausência da sua contribuição após o reset.
+ * @brief Tests the integral component reset.
  */
 void test_integral_reset(void);
 
 /**
- * @brief Testa o comportamento do PID quando o intervalo de tempo (dt) é zero.
+ * @brief Tests the PID behaviour when the time interval (dt) is zero.
  * 
- * Espera-se que as componentes integral e derivativa não contribuam para a saída.
+ * Its expected that the integral and  derivative components dont contribute to the output.
  */
 void test_zero_dt_behaviour(void);
 
 /**
- * @brief Testa a consistência do PID ao ser chamado de forma sequencial 
- * com diferentes combinações de ações (P, PI, PID).
+ * @brief Tests the PID consistency when its called in cascade with diferent actions (P, PI, PID).
  */
 void test_cascading_pid_steps(void);
 
 /**
- * @brief Garante que a derivada no primeiro passo de execução é zero.
+ * @brief Tests the initial derivative.
+ * 
+ * This initial derivative should be zero.
  */
 void test_derivative_initial_zero(void);
 
 /**
- * @brief Testa o comportamento do PID quando o intervalo de tempo (dt) é negativo.
+ * @brief Tests the PID behaviour when the time interval (dt) is negative.
  * 
- * Espera-se que esse caso seja tratado como dt = 0, ou seja, sem contribuição integral ou derivativa.
+ * It's expected to be treateas as if dt = 0, which means the integral and
+ *  derivative components dont contribute to the output.
  */
 void test_negative_dt_behaviour(void);
 
