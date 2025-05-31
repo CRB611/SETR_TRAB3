@@ -17,13 +17,6 @@
 #include <errno.h>
 
 
-/* O nó pwm0 deve estar ativo no overlay */
-#define HEATER_PWM_NODE     DT_NODELABEL(pwm0)
-#define HEATER_PWM_CHANNEL  0U
-
-/* 1 kHz → 1 ms = 1 000 000 ns */
-#define HEATER_PWM_PERIOD_NS 1000000U
-
 /* Obter o device a partir do Devicetree */
 static const struct device *heater_pwm_dev = DEVICE_DT_GET(HEATER_PWM_NODE);
 
@@ -40,14 +33,17 @@ int heater_init(void)
 
 void heater_set_power(uint8_t percent)
 {
+    /*Impedir a saturaçao da percentagem*/
     if (percent > 100U) {
         percent = 100U;
     }
 
     printk("PWM duty = %u%%\n", percent);
 
+    /*calcular o pulso*/
     uint32_t pulse_ns = (HEATER_PWM_PERIOD_NS * percent) / 100U;
 
+    /*definir o pwm*/
     int ret = pwm_set(heater_pwm_dev,
                       HEATER_PWM_CHANNEL,
                       HEATER_PWM_PERIOD_NS,

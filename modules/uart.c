@@ -91,6 +91,7 @@ int process_uart_command(const char *cmd, char *reply) {
     char id = cmd[1];
     switch (id) {
         case 'M': {
+            /*definir max temp*/
             int val = char2num((unsigned char *)&cmd[2], 3);
             if (val > MAX_TEMP) {
                 sprintf(reply, "#Ei000!");
@@ -102,6 +103,7 @@ int process_uart_command(const char *cmd, char *reply) {
             return 0;
         }
         case 'C': {
+            /*devolver a temp atual*/
             uint8_t temp = rtdb_get_cur_temp();
             unsigned char buf[8] = "#c000000!";
             buf[1] = 'c';
@@ -112,6 +114,7 @@ int process_uart_command(const char *cmd, char *reply) {
             return 0;
         }
         case 'S': {
+            /*definir os parametros do PID*/
             float Kp = char2float((unsigned char *)&cmd[2]);
             float Ti = char2float((unsigned char *)&cmd[6]);
             float Td = char2float((unsigned char *)&cmd[10]);
@@ -121,12 +124,14 @@ int process_uart_command(const char *cmd, char *reply) {
             return 0;
         }
         case 'R': {
+            /*Reset ás variaveis da RTDB*/
             rtdb_reset();
             int cs = calcChecksum((unsigned char *)"Eo", 2);
             sprintf(reply, "#Eo%03d!", cs);
             return 0;
         }
         case 'D': {
+            /*definir o setpoint*/
             int sp = char2num((unsigned char *)&cmd[2], 3);
             rtdb_set_setpoint((uint16_t)sp);
             int cs = calcChecksum((unsigned char *)"Eo", 2);
@@ -145,6 +150,7 @@ int process_uart_command(const char *cmd, char *reply) {
             return 0;
         }
         default: {
+            /*comando inesistente*/
             int cs = calcChecksum((unsigned char *)"Ei", 2);
             sprintf(reply, "#Ei%03d!", cs);
             return -1;

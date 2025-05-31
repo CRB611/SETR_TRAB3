@@ -52,7 +52,6 @@ void rtdb_set_cur_temp(uint8_t t)
     k_mutex_lock(&rtdb_mutex, K_FOREVER);
     cur_temp = t;
     k_mutex_unlock(&rtdb_mutex);
-    // faz sentido fazer um if t== null ?
 
 }
 
