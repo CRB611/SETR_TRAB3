@@ -45,7 +45,7 @@ static bool table_flag = false;
 
 /* TC74 RELATED VARIABLES */
 #define TC74_SAMPLE_PERIOD_MS  1000                  ///< Sampling period, in miliseconds
-#define TC74_THREAD_PRIORITY   5                     ///< Thread Priority for TC74
+#define TC74_THREAD_PRIORITY   3                     ///< Thread Priority for TC74
 #define TC74_THREAD_STACK_SIZE 512                  ///< Stack Size for the UART
 
 /* TC74 RELATED VARIABLES */
