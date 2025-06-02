@@ -351,7 +351,7 @@ static void tc74_thread(void *unused1, void *unused2, void *unused3)
         }
 
         /*unlocking the mutex*/
-        k_mutex_unlock(&tc74_mutex, K_FOREVER);
+        k_mutex_unlock(&tc74_mutex);
 
         k_msleep(TC74_SAMPLE_PERIOD_MS);
     }
@@ -381,7 +381,7 @@ static void control_thread(void *a, void *b, void *c)
         }
         
         /*unlocking the mutex*/
-        k_mutex_unlock(&pid_mutex, K_FOREVER);
+        k_mutex_unlock(&pid_mutex);
         k_msleep(PID_SAMPLE_PERIOD_MS);
     }
 }
