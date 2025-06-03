@@ -105,7 +105,7 @@ int process_uart_command(const char *cmd, char *reply) {
         case 'C': {
             /*devolver a temp atual*/
             uint8_t temp = rtdb_get_cur_temp();
-            unsigned char buf[8] = "#c000000!";
+            unsigned char buf[9] = "#c000000!";
             buf[1] = 'c';
             num2char(&buf[2], temp);
             int cs = calcChecksum(&buf[1], 4);
@@ -141,7 +141,7 @@ int process_uart_command(const char *cmd, char *reply) {
         case 'G': {
             /* Get max_temp: #G000YYY! */
             uint8_t max = rtdb_get_maxtemp();
-            unsigned char buf[8] = "#G000000!";
+            unsigned char buf[9] = "#G000000!";
             buf[1] = 'G';
             num2char(&buf[2], max);
             int cs = calcChecksum(&buf[1], 4);

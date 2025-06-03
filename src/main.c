@@ -395,7 +395,7 @@ static void uart_thread(void *arg1, void *arg2, void *arg3)
 
     while (1) {
         
-        printk("UART-Thread: ciclo, chars_recebidos = %d\n", uart_rxbuf_nchar);
+        printk("\nUART-Thread: ciclo, chars_recebidos = %d\n", uart_rxbuf_nchar);
 
         /*locking te uart mutex*/
         k_mutex_lock(&uart_mutex, K_FOREVER);
@@ -456,6 +456,7 @@ int uart_process(void)
     int result = process_uart_command(frame, reply);
     /* Send reply */
     uart_tx(uart, (const uint8_t *)reply, strlen(reply), SYS_FOREVER_US);
-    printk("UART reply: %s\n", reply);
+    printk("UART reply: %s\n\n--------\n", reply);
+
     return result;
 }
